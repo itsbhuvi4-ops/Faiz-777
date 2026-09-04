@@ -1,32 +1,76 @@
--- FAIZ 777 production schema. Run in Supabase SQL Editor before deploying.
-create extension if not exists "uuid-ossp";
-create table public.admin_users (user_id uuid primary key references auth.users(id) on delete cascade, created_at timestamptz default now());
-create table public.site_settings (id int primary key default 1 check (id=1), creator_name text not null default 'FAIZ 777', subtitle text, description text, youtube_channel_link text, collaboration_email text, updated_at timestamptz default now());
-create table public.hero_settings (id int primary key default 1 check (id=1), logo_path text, creator_name text, subtitle text, description text, youtube_link text, active boolean default true, updated_at timestamptz default now());
-create table public.announcements (id uuid primary key default uuid_generate_v4(), text text not null, category text default 'update', active boolean default true, pinned boolean default false, display_order int default 0, created_at timestamptz default now(), updated_at timestamptz default now());
-create table public.events (id uuid primary key default uuid_generate_v4(), name text not null, event_type text, description text, logo_path text, banner_path text, event_date date, event_time time, prize_pool text, entry_fee text, registration_status text check (registration_status in ('REGISTRATION OPEN','UPCOMING','LIVE','COMPLETED')), registration_link text, rules text, schedule text, youtube_livestream_link text, bracket_info text, results text, published boolean default false, created_at timestamptz default now(), updated_at timestamptz default now());
-create table public.profiles (id uuid primary key default uuid_generate_v4(), name text not null, subtitle text, biography text, image_path text, links jsonb default '[]'::jsonb, display_order int default 0, active boolean default true, created_at timestamptz default now(), updated_at timestamptz default now());
-create table public.community_links (id uuid primary key default uuid_generate_v4(), platform_name text not null, platform_link text not null, description text, display_order int default 0, active boolean default true);
-create table public.youtube_settings (id int primary key default 1 check (id=1), channel_link text, channel_id text, featured_video_id text, sync_status text default 'not configured', last_sync_at timestamptz, enabled boolean default true);
-create table public.collaboration_settings (id int primary key default 1 check (id=1), business_email text, title text default 'WORK WITH FAIZ 777', description text, active boolean default true);
-alter table public.site_settings enable row level security; alter table public.hero_settings enable row level security; alter table public.announcements enable row level security; alter table public.events enable row level security; alter table public.profiles enable row level security; alter table public.community_links enable row level security; alter table public.youtube_settings enable row level security; alter table public.collaboration_settings enable row level security;
--- Public sees only live, intended content. Admin membership is never client-controlled.
-create policy "public hero" on public.hero_settings for select using (active);
-create policy "public announcements" on public.announcements for select using (active);
-create policy "public events" on public.events for select using (published);
-create policy "public profiles" on public.profiles for select using (active);
-create policy "public communities" on public.community_links for select using (active);
-create policy "public settings" on public.site_settings for select using (true);
-create policy "public youtube" on public.youtube_settings for select using (enabled);
-create policy "public collaboration" on public.collaboration_settings for select using (active);
--- Apply this policy to every table above for authenticated administrators.
-create policy "admins manage site settings" on public.site_settings for all to authenticated using (exists(select 1 from public.admin_users where user_id=auth.uid())) with check (exists(select 1 from public.admin_users where user_id=auth.uid()));
-create policy "admins manage hero" on public.hero_settings for all to authenticated using (exists(select 1 from public.admin_users where user_id=auth.uid())) with check (exists(select 1 from public.admin_users where user_id=auth.uid()));
-create policy "admins manage announcements" on public.announcements for all to authenticated using (exists(select 1 from public.admin_users where user_id=auth.uid())) with check (exists(select 1 from public.admin_users where user_id=auth.uid()));
-create policy "admins manage events" on public.events for all to authenticated using (exists(select 1 from public.admin_users where user_id=auth.uid())) with check (exists(select 1 from public.admin_users where user_id=auth.uid()));
-create policy "admins manage profiles" on public.profiles for all to authenticated using (exists(select 1 from public.admin_users where user_id=auth.uid())) with check (exists(select 1 from public.admin_users where user_id=auth.uid()));
-create policy "admins manage communities" on public.community_links for all to authenticated using (exists(select 1 from public.admin_users where user_id=auth.uid())) with check (exists(select 1 from public.admin_users where user_id=auth.uid()));
-create policy "admins manage youtube" on public.youtube_settings for all to authenticated using (exists(select 1 from public.admin_users where user_id=auth.uid())) with check (exists(select 1 from public.admin_users where user_id=auth.uid()));
-create policy "admins manage collaboration" on public.collaboration_settings for all to authenticated using (exists(select 1 from public.admin_users where user_id=auth.uid())) with check (exists(select 1 from public.admin_users where user_id=auth.uid()));
--- In Storage: create public bucket `website-assets`. Add public select policy and admin-only insert/update/delete policies using admin_users.
--- Add tables to supabase_realtime publication for instant public refresh.
+-- FAIZ 777 recruitment backend. Run in Supabase SQL Editor.
+create extension if not exists pgcrypto;
+
+create table if not exists public.admin_users (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  active boolean not null default true,
+  created_at timestamptz not null default now()
+);
+alter table public.admin_users add column if not exists active boolean not null default true;
+create table if not exists public.applications (
+  id uuid primary key default gen_random_uuid(),
+  application_id text not null unique,
+  full_name text not null,
+  ign text not null,
+  uid text not null unique check (uid ~ '^[0-9]{6,16}$'),
+  age smallint not null check (age between 10 and 100),
+  state text not null, district text not null, country text not null,
+  role text not null check (role in ('Rusher','Sniper','Support','IGL')),
+  whatsapp text not null, instagram text not null, reason text not null,
+  rules_accepted boolean not null check (rules_accepted),
+  status text not null default 'pending' check (status in ('pending','under_review','selected','rejected')),
+  created_at timestamptz not null default now(), updated_at timestamptz not null default now()
+);
+create table if not exists public.members (
+  id uuid primary key default gen_random_uuid(),
+  ign text not null, uid text not null unique,
+  role text not null check (role in ('Rusher','Sniper','Support','IGL')),
+  profile_image text, member_since date not null default current_date,
+  active boolean not null default true,
+  created_at timestamptz not null default now(), updated_at timestamptz not null default now()
+);
+create table if not exists public.settings (
+  id smallint primary key default 1 check (id=1), recruitment_open boolean not null default true,
+  guild_name text not null default 'FAIZ 777', guild_description text, logo_url text,
+  guild_rules jsonb, match_rules jsonb, instagram_url text, whatsapp_url text,
+  youtube_url text not null default 'https://youtube.com/@faiz777gaming-n8i?si=gZdpJ1OVehVuaKoE',
+  updated_at timestamptz not null default now()
+);
+insert into public.settings(id) values (1) on conflict (id) do nothing;
+
+create or replace function public.is_admin()
+returns boolean language sql stable security definer set search_path = public
+as $$ select exists(select 1 from public.admin_users where user_id = auth.uid() and active) $$;
+create or replace function public.touch_updated_at()
+returns trigger language plpgsql as $$ begin new.updated_at=now(); return new; end $$;
+create trigger applications_touch before update on public.applications for each row execute function public.touch_updated_at();
+create trigger members_touch before update on public.members for each row execute function public.touch_updated_at();
+
+-- RPC keeps applicant contact data private and creates the id server-side.
+create or replace function public.submit_application(payload jsonb)
+returns table(application_id text) language plpgsql security definer set search_path=public as $$
+declare generated_id text; next_number integer;
+begin
+  if not (select recruitment_open from public.settings where id=1) then raise exception 'Recruitment is closed'; end if;
+  if exists(select 1 from public.applications where uid=payload->>'uid') then raise exception 'duplicate_uid'; end if;
+  select count(*) + 1 into next_number from public.applications where extract(year from created_at)=extract(year from now());
+  generated_id := 'FAIZ-' || extract(year from now())::text || '-' || lpad(next_number::text,4,'0');
+  insert into public.applications(application_id,full_name,ign,uid,age,state,district,country,role,whatsapp,instagram,reason,rules_accepted)
+  values(generated_id, payload->>'full_name', payload->>'ign', payload->>'uid', (payload->>'age')::smallint, payload->>'state', payload->>'district', payload->>'country', payload->>'role', payload->>'whatsapp', payload->>'instagram', payload->>'reason', (payload->>'rules_accepted')::boolean);
+  return query select generated_id;
+end $$;
+create or replace function public.get_application_status(lookup_id text)
+returns table(application_id text, ign text, uid text, role text, status text, created_at timestamptz) language sql security definer set search_path=public as $$
+  select a.application_id,a.ign,a.uid,a.role,a.status,a.created_at from public.applications a where a.application_id=upper(lookup_id) $$;
+grant execute on function public.submit_application(jsonb), public.get_application_status(text) to anon, authenticated;
+
+alter table public.admin_users enable row level security;
+alter table public.applications enable row level security;
+alter table public.members enable row level security;
+alter table public.settings enable row level security;
+create policy "admins read own admin record" on public.admin_users for select to authenticated using (user_id=auth.uid());
+create policy "public active members" on public.members for select using (active=true);
+create policy "admins manage members" on public.members for all to authenticated using (public.is_admin()) with check (public.is_admin());
+create policy "public settings" on public.settings for select using (true);
+create policy "admins manage settings" on public.settings for all to authenticated using (public.is_admin()) with check (public.is_admin());
+create policy "admins manage applications" on public.applications for all to authenticated using (public.is_admin()) with check (public.is_admin());
