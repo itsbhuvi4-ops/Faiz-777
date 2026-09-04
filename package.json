@@ -6,9 +6,11 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.115.0",
     "@vitejs/plugin-react": "latest",
+    "framer-motion": "^13.2.0",
     "lucide-react": "latest",
     "react": "latest",
     "react-dom": "latest",
+    "react-router-dom": "^7.18.3",
     "vite": "latest"
   }
 }
