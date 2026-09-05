@@ -16,12 +16,161 @@ function YoutubeButton({ children = 'WATCH ON YOUTUBE', className = '' }) { retu
 function Spinner({ label = 'Loading...' }) { return <div className="loading"><LoaderCircle className="spin" /> {label}</div> }
 function StatusBadge({ status }) { return <span className={`badge ${status?.replace(' ', '-')}`}>{status?.replace('_', ' ')}</span> }
 
+function LoadingScreen({ onFinish }) {
+  const [progress, setProgress] = useState(0)
+
+  useEffect(() => {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (prefersReducedMotion) {
+      onFinish()
+      return
+    }
+
+    const interval = setInterval(() => {
+      setProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(interval)
+          setTimeout(onFinish, 200)
+          return 100
+        }
+        const step = Math.floor(Math.random() * 18) + 14
+        return Math.min(100, prev + step)
+      })
+    }, 80)
+
+    return () => clearInterval(interval)
+  }, [onFinish])
+
+  return (
+    <motion.div
+      className="faiz-loader-overlay"
+      initial={{ opacity: 1 }}
+      exit={{ opacity: 0, y: -24 }}
+      transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+    >
+      <div className="faiz-loader-content">
+        <div className="faiz-loader-badge">
+          <span>FZ</span>
+          <em>777</em>
+        </div>
+        <div className="faiz-loader-title">FAIZ <i>777</i></div>
+        <div className="faiz-loader-sub">GUILD RECRUITMENT INTERFACE // 2026</div>
+
+        <div className="faiz-loader-bar-wrap">
+          <div className="faiz-loader-bar" style={{ width: `${progress}%` }} />
+        </div>
+        <div className="faiz-loader-meta">
+          <span>SYSTEM INITIALIZATION</span>
+          <span>{progress}%</span>
+        </div>
+      </div>
+    </motion.div>
+  )
+}
+
+function EventMarquee() {
+  return (
+    <div className="genesis-marquee" aria-hidden="true">
+      <div className="genesis-marquee-track">
+        {[...Array(2)].map((_, i) => (
+          <div key={i} className="genesis-marquee-group">
+            <span>FAIZ 777 EDITION 2026</span>
+            <span className="marquee-diamond">◆</span>
+            <span>OFFICIAL FREE FIRE GUILD</span>
+            <span className="marquee-diamond">◆</span>
+            <span>RECRUITMENT ACTIVE</span>
+            <span className="marquee-diamond">◆</span>
+            <span>REALTIME SELECTION SYNC</span>
+            <span className="marquee-diamond">◆</span>
+            <span>YOUTUBE LIVE STREAM EVALUATIONS</span>
+            <span className="marquee-diamond">◆</span>
+            <span>NO ROOF · NO PANEL · FACE TO FACE</span>
+            <span className="marquee-diamond">◆</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function Navbar() {
   const [open, setOpen] = useState(false)
-  const links = [['HOME', '/'], ['RECRUITMENT', '/recruitment'], ['RULES', '/rules'], ['MATCHES', '/matches'], ['MEMBERS', '/members'], ['APPLICATION STATUS', '/status']]
-  return <header className="navbar"><Brand /><nav className={open ? 'navlinks open' : 'navlinks'}>{links.map(([name, path]) => <NavLink key={path} to={path} end={path === '/'} onClick={() => setOpen(false)}>{name}</NavLink>)}</nav><div className="navright"><Link className="admin" to="/admin">ADMIN</Link><YoutubeButton className="navwatch">WATCH YOUTUBE</YoutubeButton><button className="menu" aria-label="Toggle navigation" onClick={() => setOpen(!open)}>{open ? <X /> : <Menu />}</button></div></header>
+  const links = [
+    ['HOME', '/'],
+    ['RECRUITMENT', '/recruitment'],
+    ['RULES', '/rules'],
+    ['MATCHES', '/matches'],
+    ['MEMBERS', '/members'],
+    ['APPLICATION STATUS', '/status']
+  ]
+  return (
+    <header className="navbar">
+      <Brand />
+      <nav className={open ? 'navlinks open' : 'navlinks'}>
+        {links.map(([name, path]) => (
+          <NavLink key={path} to={path} end={path === '/'} onClick={() => setOpen(false)}>
+            {name}
+          </NavLink>
+        ))}
+      </nav>
+      <div className="navright">
+        <Link className="admin" to="/admin">ADMIN</Link>
+        <YoutubeButton className="navwatch">WATCH YOUTUBE</YoutubeButton>
+        <button className="menu" aria-label="Toggle navigation" onClick={() => setOpen(!open)}>
+          {open ? <X /> : <Menu />}
+        </button>
+      </div>
+    </header>
+  )
 }
-function Footer() { return <footer><div><Brand /><p>FREE FIRE GUILD</p><strong>PLAY HARD • STAY ACTIVE • DOMINATE</strong></div><div className="footerlinks"><Link to="/">Home</Link><Link to="/recruitment">Recruitment</Link><Link to="/rules">Rules</Link><Link to="/matches">Matches</Link><Link to="/members">Members</Link><Link to="/status">Application Status</Link></div><div className="social"><a href={YOUTUBE} target="_blank" rel="noreferrer"><Play /> YouTube</a><span>Instagram</span><span>WhatsApp</span></div><small>© 2026 FAIZ 777. All rights reserved.<br />FAIZ 777 is an independent gaming community and is not affiliated with Garena.</small></footer> }
+
+function Footer() {
+  return (
+    <footer>
+      <div className="footer-brand-col">
+        <Brand />
+        <span className="footer-tagline">THE OFFICIAL FREE FIRE ESPORTS GUILD</span>
+        <p className="footer-desc">High-octane gameplay, no-filter moments, and an elite community engineered to dominate. FAIZ 777 is for competitors who bring pure gun skill and teamwork to every match.</p>
+        <div className="footer-status-pill">
+          <span className="pulse-dot" /> REALTIME DATABASE CONNECTED
+        </div>
+      </div>
+      <div>
+        <span className="footer-col-title">Navigation</span>
+        <nav className="footerlinks">
+          <Link to="/">Home Hub</Link>
+          <Link to="/recruitment">Guild Recruitment</Link>
+          <Link to="/rules">Rules & Protocols</Link>
+          <Link to="/matches">Room Match Trials</Link>
+          <Link to="/members">Verified Roster</Link>
+          <Link to="/status">Application Status</Link>
+        </nav>
+      </div>
+      <div>
+        <span className="footer-col-title">Community</span>
+        <div className="social">
+          <a href={YOUTUBE} target="_blank" rel="noreferrer"><Play size={14} fill="currentColor" /> YouTube Broadcasts</a>
+          <span style={{ cursor: 'default' }}>Official WhatsApp Hub</span>
+          <span style={{ cursor: 'default' }}>Instagram Highlights</span>
+        </div>
+      </div>
+      <div>
+        <span className="footer-col-title">Guild Protocols</span>
+        <nav className="footerlinks">
+          <Link to="/rules">No Roof Rule</Link>
+          <Link to="/rules">No Wall Break Rule</Link>
+          <Link to="/rules">Face-To-Face Only</Link>
+          <Link to="/recruitment">Enlist in Trials →</Link>
+        </nav>
+      </div>
+      <div className="footer-bottom">
+        <span>© 2026 FAIZ 777. All rights reserved.</span>
+        <span>FAIZ 777 is an independent gaming community, not affiliated with Garena Free Fire.</span>
+      </div>
+    </footer>
+  )
+}
+
 function Layout({ children }) { return <><Navbar /><main>{children}</main><Footer /></> }
 
 function SelectedRecruitsLive() {
@@ -31,7 +180,7 @@ function SelectedRecruitsLive() {
   const fetchSelected = async () => {
     if (!supabase) return
     try {
-      // Fetch selected applications
+      // Fetch selected applications (real Supabase data only)
       const { data: apps } = await supabase
         .from('applications')
         .select('id,application_id,ign,uid,role,status,created_at')
@@ -42,7 +191,7 @@ function SelectedRecruitsLive() {
       if (apps && apps.length > 0) {
         setSelectedList(apps)
       } else {
-        // Fallback to active members list if applications table is empty
+        // Fallback to active members list if applications table has no selected yet
         const { data: mems } = await supabase
           .from('members')
           .select('id,ign,uid,role,member_since')
@@ -63,7 +212,7 @@ function SelectedRecruitsLive() {
 
   useEffect(() => {
     fetchSelected()
-    // 5-second polling interval so all users on mobile see changes live when admin selects or rejects
+    // 5-second polling interval so changes sync live
     const interval = setInterval(fetchSelected, 5000)
 
     // Supabase Realtime channel subscription
@@ -88,52 +237,272 @@ function SelectedRecruitsLive() {
   }, [])
 
   return (
-    <section className="selected-recruits-section">
-      <div className="section-head">
-        <div>
-          <div className="live-pill"><span className="pulse-dot"></span> LIVE GUILD SELECTIONS</div>
-          <h2 className="section-title">SELECTED <em>WARRIORS.</em></h2>
-          <p className="section-desc">Approved recruits selected by Admin Bhuvi to join the official FAIZ 777 Free Fire roster.</p>
+    <section className="event-section border-top" id="roster">
+      <div className="event-section-inner">
+        <div className="roster-header-bar">
+          <div>
+            <div className="live-pill"><span className="pulse-dot"></span> LIVE GUILD SELECTIONS</div>
+            <h2 className="editorial-title">SELECTED <span className="gold-text">WARRIORS.</span></h2>
+            <p className="section-lead">Approved recruits verified by Admin Bhuvi through live evaluations. Displaying verified real-time Supabase roster.</p>
+          </div>
+          <Link to="/members" className="btn outline">VIEW FULL ROSTER <ArrowRight size={14} /></Link>
         </div>
-        <Link to="/members" className="btn outline">VIEW FULL ROSTER <ArrowRight size={14} /></Link>
-      </div>
 
-      {loading && !selectedList.length ? (
-        <Spinner label="Syncing selected recruits..." />
-      ) : selectedList.length > 0 ? (
-        <div className="selected-grid">
-          {selectedList.map((player, idx) => (
-            <motion.article 
-              key={player.id || idx} 
-              className="selected-card"
-              initial={{ opacity: 0, y: 15 }}
+        {loading && !selectedList.length ? (
+          <Spinner label="Syncing live roster..." />
+        ) : selectedList.length > 0 ? (
+          <div className="selected-grid">
+            {selectedList.map((player, idx) => (
+              <motion.article
+                key={player.id || idx}
+                className="selected-card corner-frame"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.05, duration: 0.35 }}
+              >
+                <span className="corner-bracket corner-tl" />
+                <span className="corner-bracket corner-br" />
+                <div className="selected-card-top">
+                  <span className="badge selected">SELECTED</span>
+                  <span className="role-tag">{player.role || 'Rusher'}</span>
+                </div>
+                <div className="selected-avatar">
+                  <span>{player.ign?.slice(0, 1)?.toUpperCase() || 'F'}</span>
+                </div>
+                <h3>FZ • {player.ign}</h3>
+                <p className="uid-text">UID: {player.uid}</p>
+                <div className="selected-footer">
+                  <small>GUILD RECRUIT</small>
+                  <span className="status-indicator">✓ VERIFIED</span>
+                </div>
+              </motion.article>
+            ))}
+          </div>
+        ) : (
+          <div className="empty corner-frame">
+            <span className="corner-bracket corner-tl" />
+            <span className="corner-bracket corner-br" />
+            <ShieldCheck size={40} />
+            <strong>Selections in progress.</strong>
+            <p>Admin is reviewing applications. Selected warriors will appear here live.</p>
+            <Link to="/recruitment" className="btn lime" style={{ marginTop: '14px' }}>APPLY FOR SELECTION <ArrowRight size={14} /></Link>
+          </div>
+        )}
+      </div>
+    </section>
+  )
+}
+
+function HomeStatusSection() {
+  const [id, setId] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [result, setResult] = useState(null)
+  const [whatsappLink, setWhatsappLink] = useState(() => localStorage.getItem('faiz_whatsapp_group') || 'https://chat.whatsapp.com/')
+
+  useEffect(() => {
+    if (isConfigured) {
+      supabase.from('settings').select('whatsapp_url').eq('id', 1).maybeSingle().then(({ data }) => {
+        if (data?.whatsapp_url) {
+          setWhatsappLink(data.whatsapp_url)
+          localStorage.setItem('faiz_whatsapp_group', data.whatsapp_url)
+        }
+      })
+    }
+  }, [])
+
+  const check = async e => {
+    e.preventDefault()
+    if (!id.trim()) return setError('Enter your Application ID or Free Fire UID.')
+    setLoading(true)
+    setError('')
+    setResult(null)
+
+    try {
+      const clean = id.trim()
+      let found = null
+
+      if (isConfigured && supabase) {
+        const { data, error } = await supabase.rpc('get_application_status', { lookup_id: clean.toUpperCase() })
+        if (!error && data && data.length > 0) {
+          found = data[0]
+        }
+      }
+
+      if (found) {
+        setResult(found)
+      } else {
+        setError('No application found with this Application ID or Free Fire UID.')
+      }
+    } catch (err) {
+      setError('Unable to verify application status. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <section className="event-section border-top" id="status-lookup">
+      <div className="event-section-inner">
+        <div className="section-header centered">
+          <div className="section-tag">— 04 // VERIFICATION PORTAL</div>
+          <h2 className="editorial-title">APPLICATION <span className="gold-text">STATUS LOOKUP.</span></h2>
+          <p className="section-lead">Track your recruitment standing live. Enter your unique Application ID or Free Fire UID to inspect your evaluation phase.</p>
+        </div>
+
+        <div className="status-lookup-box corner-frame">
+          <span className="corner-bracket corner-tl" />
+          <span className="corner-bracket corner-br" />
+          <form className="status-search-form" onSubmit={check}>
+            <div className="status-input-wrap">
+              <Search size={16} className="search-icon" />
+              <input
+                value={id}
+                onChange={e => setId(e.target.value)}
+                placeholder="Enter Application ID (e.g. FAIZ-2026-XXXX) or Free Fire UID"
+              />
+            </div>
+            <button className="btn lime" disabled={loading}>
+              {loading ? <LoaderCircle className="spin" size={14} /> : 'INSPECT STATUS'}
+            </button>
+          </form>
+          {error && <p className="form-error">{error}</p>}
+
+          {result && (
+            <motion.div
+              className="status-result-card corner-frame"
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.05 }}
             >
-              <div className="selected-card-top">
-                <span className="badge selected">SELECTED</span>
-                <span className="role-tag">{player.role || 'Rusher'}</span>
+              <span className="corner-bracket corner-tl" />
+              <span className="corner-bracket corner-br" />
+              <div className="src-header">
+                <div>
+                  <span className="section-tag" style={{ margin: 0 }}>APPLICANT DOSSIER</span>
+                  <div className="src-ign">FZ • <em>{result.ign}</em></div>
+                </div>
+                <StatusBadge status={result.status === 'pending' ? 'under_review' : result.status} />
               </div>
-              <div className="selected-avatar">
-                <span>{player.ign?.slice(0, 1) || 'F'}</span>
+
+              <div className="src-details">
+                <div className="src-item">
+                  <span>Application ID</span>
+                  <strong>{result.application_id}</strong>
+                </div>
+                <div className="src-item">
+                  <span>Free Fire UID</span>
+                  <strong>{result.uid}</strong>
+                </div>
+                <div className="src-item">
+                  <span>Combat Role</span>
+                  <strong className="text-accent">{result.role}</strong>
+                </div>
+                <div className="src-item">
+                  <span>Evaluator</span>
+                  <strong>{result.reviewed_by || 'Admin Bhuvi'}</strong>
+                </div>
+                <div className="src-item">
+                  <span>Submission Date</span>
+                  <strong>{result.created_at ? new Date(result.created_at).toLocaleDateString('en-IN') : '—'}</strong>
+                </div>
+                <div className="src-item">
+                  <span>Review Status</span>
+                  <strong>{result.status?.toUpperCase()?.replace('_', ' ')}</strong>
+                </div>
               </div>
-              <h3>FZ • {player.ign}</h3>
-              <p className="uid-text">UID: {player.uid}</p>
-              <div className="selected-footer">
-                <small>GUILD RECRUIT</small>
-                <span className="status-indicator">✓ VERIFIED</span>
+
+              {result.status === 'selected' ? (
+                <div className="src-notice selected">
+                  🎉 <b>CONGRATULATIONS!</b> You have been officially selected by Admin Bhuvi to join FAIZ 777. Please join the WhatsApp group below to receive your slot.
+                </div>
+              ) : result.status === 'rejected' ? (
+                <div className="src-notice rejected">
+                  Your application was not selected for this recruitment season. You can apply again in the next round.
+                </div>
+              ) : (
+                <div className="src-notice pending">
+                  Your application has been received and is currently undergoing review by Admin Bhuvi for the upcoming room match trial.
+                </div>
+              )}
+
+              <div className="src-actions">
+                <a className="btn whatsapp" href={whatsappLink} target="_blank" rel="noreferrer">
+                  <MessageCircle size={15} /> JOIN OFFICIAL WHATSAPP GROUP <ExternalLink size={13} />
+                </a>
+                <Link to="/status" className="btn outline">VIEW DETAILED DOSSIER <ArrowRight size={13} /></Link>
               </div>
-            </motion.article>
+            </motion.div>
+          )}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function WhyJoinSection() {
+  const perks = [
+    {
+      num: '01',
+      title: 'YouTube Live Broadcasts',
+      desc: 'Showcase your aggressive gun skill in front of thousands of active viewers. All official evaluation room matches and guild wars are streamed live on the FAIZ 777 channel.'
+    },
+    {
+      num: '02',
+      title: 'Strict Tournament Protocols',
+      desc: 'We enforce uncompromised competitive standards: No Roof, No Panel, No Wall Break. Only authentic face-to-face combat and pure aim are rewarded.'
+    },
+    {
+      num: '03',
+      title: 'Direct Strategic Hub',
+      desc: 'Connect directly with Admin Bhuvi and fellow verified guild members via the private WhatsApp group. Receive room IDs, passwords, and custom match slots ahead of time.'
+    },
+    {
+      num: '04',
+      title: 'Official Clan Identity',
+      desc: 'Selected warriors officially adopt the FZ clan prefix and earn a permanent spot on the verified guild roster with live database synchronization.'
+    }
+  ]
+
+  return (
+    <section className="event-section border-top" id="advantages">
+      <div className="event-section-inner">
+        <div className="section-header">
+          <div className="section-tag">— 05 // GUILD ADVANTAGES</div>
+          <h2 className="editorial-title">WHY ENLIST IN <span className="gold-text">FAIZ 777.</span></h2>
+          <p className="section-lead">A dedicated platform for competitive Free Fire players who prioritize discipline, gun skill, and real tournament experience.</p>
+        </div>
+
+        <div className="why-grid">
+          {perks.map(p => (
+            <article key={p.num} className="why-card corner-frame">
+              <span className="corner-bracket corner-tl" />
+              <span className="corner-bracket corner-br" />
+              <div className="why-num">{p.num} // SPEC</div>
+              <h3>{p.title}</h3>
+              <p>{p.desc}</p>
+            </article>
           ))}
         </div>
-      ) : (
-        <div className="empty">
-          <ShieldCheck size={36} />
-          <strong>Admin is reviewing ongoing applications.</strong>
-          <p>Selected applicants will be broadcasted live right here.</p>
-          <Link to="/recruitment" className="btn lime" style={{ marginTop: '10px' }}>APPLY FOR SELECTION</Link>
+      </div>
+    </section>
+  )
+}
+
+function FinalCTASection() {
+  return (
+    <section className="final-cta-section">
+      <div className="final-cta-card corner-frame">
+        <span className="corner-bracket corner-tl" />
+        <span className="corner-bracket corner-br" />
+        <div className="section-tag">— 06 // ENLIST TODAY</div>
+        <h2>CLAIM YOUR PLACE <span className="gold-text">ON THE ROSTER.</span></h2>
+        <p>Registration slots for the upcoming live YouTube room match trials are strictly limited. Submit your application now and prove your caliber.</p>
+        <div className="final-cta-actions">
+          <Link to="/recruitment" className="btn lime">ENLIST IN RECRUITMENT <ArrowRight size={15} /></Link>
+          <YoutubeButton>WATCH LIVE TRIALS</YoutubeButton>
+          <Link to="/status" className="btn outline">CHECK STATUS</Link>
         </div>
-      )}
+      </div>
     </section>
   )
 }
@@ -180,6 +549,7 @@ function Home() {
   return (
     <Layout>
       <>
+        {/* HERO SECTION — LOCKED & PRESERVED EXACTLY AS IS */}
         <section className="hero">
           <div className="hero-grid" />
           <div className="hero-art" />
@@ -205,43 +575,185 @@ function Home() {
           <div className="scroll">SCROLL TO EXPLORE ↓</div>
         </section>
 
-        {/* Personalized Registered Applicant Live Card on Home Page */}
+        {/* GENESIS-INSPIRED EVENT TICKER MARQUEE */}
+        <EventMarquee />
+
+        {/* Personalized Registered Applicant Live Dossier on Home Page */}
         {applicant?.applicationId && (
           <section className="home-applicant-banner">
-            <div className="applicant-banner-card">
+            <div className="applicant-banner-card corner-frame">
+              <span className="corner-bracket corner-tl" />
+              <span className="corner-bracket corner-br" />
               <div className="applicant-banner-info">
-                <span className="eyebrow" style={{ margin: 0 }}>YOUR REGISTERED APPLICATION</span>
-                <h2>{liveStatus?.ign || applicant.ign}</h2>
-                <p>ID: <b>{applicant.applicationId}</b> · UID: <b>{applicant.uid}</b> · Role: <b>{liveStatus?.role || applicant.role}</b></p>
+                <span className="section-tag" style={{ margin: 0 }}>— REGISTERED APPLICANT DOSSIER</span>
+                <h2>FZ • {liveStatus?.ign || applicant.ign}</h2>
+                <p>ID: <b>{applicant.applicationId}</b> · UID: <b>{applicant.uid}</b> · Role: <b className="text-accent">{liveStatus?.role || applicant.role}</b></p>
               </div>
               <div className="applicant-banner-status">
                 <div>
-                  <small>LIVE STATUS</small>
+                  <small>EVALUATION STATUS</small>
                   <StatusBadge status={liveStatus?.status || 'PENDING'} />
                 </div>
-                {/* Exclusive WhatsApp Group Link for Registered Applicant */}
                 <a className="btn whatsapp" href={whatsappLink} target="_blank" rel="noreferrer">
                   <MessageCircle size={16} /> JOIN OFFICIAL WHATSAPP GROUP <ExternalLink size={14} />
                 </a>
-                <Link className="btn outline" to="/status">VIEW DETAILS <ArrowRight size={14} /></Link>
+                <Link className="btn outline" to="/status">TRACK FULL DOSSIER <ArrowRight size={14} /></Link>
               </div>
             </div>
           </section>
         )}
 
-        <section className="intro-section">
-          <p className="eyebrow">01 / THE COMMUNITY</p>
-          <h2>PLAY WITH <em>PURPOSE.</em></h2>
-          <p>FAIZ 777 is a focused Free Fire guild for players who stay active, work as a team and bring their best to every match.</p>
-          <div className="home-cards">
-            <Link to="/rules">GUILD RULES <ArrowRight /></Link>
-            <Link to="/matches">ROOM MATCH <ArrowRight /></Link>
-            <Link to="/recruitment">APPLY NOW <ArrowRight /></Link>
+        {/* 01 — ABOUT FAIZ 777 */}
+        <section className="event-section" id="about">
+          <div className="event-section-inner">
+            <div className="section-header">
+              <div className="section-tag">— 01 // OVERVIEW</div>
+              <h2 className="editorial-title">PLAY WITH PURPOSE. <span className="gold-text">BUILT FOR VICTORY.</span></h2>
+            </div>
+            <div className="about-grid">
+              <div className="about-copy">
+                <p className="lead-paragraph">
+                  FAIZ 777 is an elite Free Fire esports community and competitive guild engineered for disciplined, high-tier players. We reject casual gameplay in favor of coordinated skirmishes, high-intensity room matches, and relentless war pushing.
+                </p>
+                <p className="body-paragraph">
+                  Recruitment is not automated or algorithmic. Every single applicant undergoes direct review and live room match evaluation conducted by Admin Bhuvi. Only those who demonstrate sharp gun skill, face-to-face composure, and unbreakable teamwork earn the verified <b>FZ</b> tag.
+                </p>
+                <div className="event-actions">
+                  <Link className="btn lime" to="/recruitment">ENLIST IN RECRUITMENT <ArrowRight size={15} /></Link>
+                  <Link className="btn outline" to="/rules">READ GUILD PROTOCOLS <ArrowRight size={15} /></Link>
+                </div>
+              </div>
+
+              <div className="about-metrics-col">
+                <div className="metrics-grid">
+                  <div className="metric-card corner-frame">
+                    <span className="corner-bracket corner-tl" />
+                    <span className="corner-bracket corner-br" />
+                    <span className="metric-num">04</span>
+                    <span className="metric-label">SPECIALIZED COMBAT ROLES</span>
+                    <p className="metric-sub">Rusher · Sniper · Support · In-Game Leader</p>
+                  </div>
+                  <div className="metric-card corner-frame">
+                    <span className="corner-bracket corner-tl" />
+                    <span className="corner-bracket corner-br" />
+                    <span className="metric-num">100%</span>
+                    <span className="metric-label">REALTIME SELECTIONS</span>
+                    <p className="metric-sub">Supabase live database roster integration</p>
+                  </div>
+                  <div className="metric-card corner-frame">
+                    <span className="corner-bracket corner-tl" />
+                    <span className="corner-bracket corner-br" />
+                    <span className="metric-num">FZ •</span>
+                    <span className="metric-label">OFFICIAL CLAN PREFIX</span>
+                    <p className="metric-sub">Standardized identity for verified warriors</p>
+                  </div>
+                  <div className="metric-card corner-frame">
+                    <span className="corner-bracket corner-tl" />
+                    <span className="corner-bracket corner-br" />
+                    <span className="metric-num">LIVE</span>
+                    <span className="metric-label">YOUTUBE BROADCASTS</span>
+                    <p className="metric-sub">Trials & guild wars streamed to thousands</p>
+                  </div>
+                </div>
+
+                <div className="nav-routes-row">
+                  <Link to="/matches" className="nav-route-card corner-frame">
+                    <span className="corner-bracket corner-tl" />
+                    <span className="corner-bracket corner-br" />
+                    <div>
+                      <span className="nrc-category">TACTICAL TRIAL</span>
+                      <strong className="nrc-title">Room Match Evaluation</strong>
+                      <p className="nrc-desc">Face-to-face combat trial streamed live on YouTube</p>
+                    </div>
+                    <ArrowRight size={18} className="nrc-icon" />
+                  </Link>
+                  <Link to="/members" className="nav-route-card corner-frame">
+                    <span className="corner-bracket corner-tl" />
+                    <span className="corner-bracket corner-br" />
+                    <div>
+                      <span className="nrc-category">GUILD ARCHIVE</span>
+                      <strong className="nrc-title">Verified Members Roster</strong>
+                      <p className="nrc-desc">Explore active warriors and assigned roles</p>
+                    </div>
+                    <ArrowRight size={18} className="nrc-icon" />
+                  </Link>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
-        {/* Dynamic Selected Recruits Section (Live sync across all devices) */}
+        {/* 02 — RECRUITMENT PIPELINE */}
+        <section className="event-section border-top" id="recruitment">
+          <div className="event-section-inner">
+            <div className="section-header">
+              <div className="section-tag">— 02 // RECRUITMENT PIPELINE</div>
+              <h2 className="editorial-title">FOUR PHASES TO <span className="gold-text">THE OFFICIAL ROSTER.</span></h2>
+              <p className="section-lead">The path from applicant to verified FAIZ 777 member is straightforward, transparent, and strictly performance-based.</p>
+            </div>
+
+            <div className="pipeline-grid">
+              <div className="pipeline-step corner-frame">
+                <span className="corner-bracket corner-tl" />
+                <span className="corner-bracket corner-br" />
+                <div className="step-count">PHASE // 01</div>
+                <h3>APPLICATION DOSSIER</h3>
+                <p>Submit your Free Fire UID, IGN, preferred role, and district details. Each player can register only once.</p>
+                <span className="step-tag">REALTIME DATABASE RECORD</span>
+              </div>
+              <div className="pipeline-step corner-frame">
+                <span className="corner-bracket corner-tl" />
+                <span className="corner-bracket corner-br" />
+                <div className="step-count">PHASE // 02</div>
+                <h3>COMMUNICATIONS HUB</h3>
+                <p>Join the official WhatsApp group. Room Match IDs, passwords, and slot distributions are announced exclusively inside.</p>
+                <span className="step-tag">DISCORD & WHATSAPP</span>
+              </div>
+              <div className="pipeline-step corner-frame">
+                <span className="corner-bracket corner-tl" />
+                <span className="corner-bracket corner-br" />
+                <div className="step-count">PHASE // 03</div>
+                <h3>LIVE ROOM MATCH TRIAL</h3>
+                <p>Compete under strict tournament guidelines: No Roof, No Panel, No Wall Break. Evaluated live on YouTube by Admin Bhuvi.</p>
+                <span className="step-tag">FACE-TO-FACE COMBAT</span>
+              </div>
+              <div className="pipeline-step corner-frame">
+                <span className="corner-bracket corner-tl" />
+                <span className="corner-bracket corner-br" />
+                <div className="step-count">PHASE // 04</div>
+                <h3>ROSTER INDUCTION</h3>
+                <p>Selected players earn the FZ prefix, official verified roster listing, and access to regular guild war pushes.</p>
+                <span className="step-tag">VERIFIED STATUS</span>
+              </div>
+            </div>
+
+            <div className="recruitment-banner-cta corner-frame">
+              <span className="corner-bracket corner-tl" />
+              <span className="corner-bracket corner-br" />
+              <div className="rbc-copy">
+                <div className="live-pill"><span className="pulse-dot"></span> REGISTRATION ACTIVE FOR SEASON 2026</div>
+                <h3>READY TO DEMONSTRATE YOUR SKILL?</h3>
+                <p>Applications are open for Rushers, Snipers, Supports, and IGLs. Take 2 minutes to submit your dossier.</p>
+              </div>
+              <div className="rbc-actions">
+                <Link to="/recruitment" className="btn lime">ENLIST NOW <ArrowRight size={15} /></Link>
+                <Link to="/rules" className="btn outline">VIEW RULES <ArrowRight size={15} /></Link>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 03 — SELECTED WARRIORS (Real-time Supabase Data Only) */}
         <SelectedRecruitsLive />
+
+        {/* 04 — APPLICATION STATUS INTERACTIVE LOOKUP */}
+        <HomeStatusSection />
+
+        {/* 05 — WHY JOIN FAIZ 777 */}
+        <WhyJoinSection />
+
+        {/* 06 — FINAL CTA */}
+        <FinalCTASection />
       </>
     </Layout>
   )
@@ -771,7 +1283,7 @@ function Status() {
   return (
     <Layout>
       <PageHero eyebrow="FAIZ 777 / APPLICATION TRACKER" title={<>APPLICATION <em>STATUS.</em></>}>
-        <p className="lede">Track your recruitment application live. All decisions made by Admin Bhuvi update here in real-time.</p>
+        <p className="lede">Track your recruitment application in real-time. All decisions are made by Admin Bhuvi and update instantly.</p>
       </PageHero>
       <section className="status-wrap">
         <form className="status-form" onSubmit={check}>
@@ -780,115 +1292,92 @@ function Status() {
             <input value={id} onChange={e => setId(e.target.value)} placeholder="e.g. FAIZ-2026-0001 or 123456789" />
           </label>
           <button className="btn lime" disabled={loading}>
-            {loading ? <LoaderCircle className="spin" /> : <Search size={16} />} CHECK STATUS
+            {loading ? <LoaderCircle className="spin" /> : <Search size={16} />} CHECK
           </button>
           {error && <p className="form-error">{error}</p>}
         </form>
 
         {result && (
-          <motion.article className="status-result" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-            {/* Status Header Badge */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+          <motion.article className="status-result" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
+            <div className="status-result-header">
               <StatusBadge status={result.status === 'pending' ? 'under_review' : result.status} />
-              <small style={{ font: '9px "DM Mono"', color: 'var(--muted)', letterSpacing: '0.08em' }}>
+              <small style={{ font: '700 9px "DM Mono"', color: 'var(--muted)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
                 {result.status === 'selected' ? '🟢 APPROVED' : result.status === 'rejected' ? '🔴 NOT SELECTED' : '🟡 UNDER REVIEW'}
               </small>
             </div>
-
-            {/* Status Card Content based on Result */}
-            {result.status === 'selected' ? (
-              <div className="status-card-selected">
-                <div className="congrats">
-                  🎉 CONGRATULATIONS!<br />
-                  <span>You have been officially selected by Admin Bhuvi to join FAIZ 777.</span>
+            <div className="status-result-body">
+              {result.status === 'selected' ? (
+                <div className="status-card-selected">
+                  <div className="congrats">
+                    🎉 CONGRATULATIONS!
+                    <span>You have been officially selected by Admin Bhuvi to join FAIZ 777.</span>
+                  </div>
+                  <dl style={{ margin: '24px 0' }}>
+                    <dt>Application ID</dt><dd><b>{result.application_id}</b></dd>
+                    <dt>In-Game Name</dt><dd><b>FZ • {result.ign}</b></dd>
+                    <dt>Free Fire UID</dt><dd>{result.uid}</dd>
+                    <dt>Guild Role</dt><dd style={{ color: 'var(--lime)', fontWeight: '700' }}>{result.role}</dd>
+                    <dt>Reviewed By</dt><dd>{result.reviewed_by || 'Admin Bhuvi'}</dd>
+                    <dt>Status</dt><dd><StatusBadge status="selected" /></dd>
+                  </dl>
+                  <div className="whatsapp-box" style={{ width: '100%', margin: '0 0 20px' }}>
+                    <h3><MessageCircle size={18} /> OFFICIAL GUILD WHATSAPP GROUP</h3>
+                    <p>Welcome to FAIZ 777! Join to receive your Room Match slot, tournament details, and guild communication.</p>
+                    <a className="btn whatsapp" href={whatsappLink} target="_blank" rel="noreferrer" style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
+                      <MessageCircle size={16} /> JOIN OFFICIAL WHATSAPP GROUP <ExternalLink size={14} />
+                    </a>
+                  </div>
+                  <div style={{ background: 'var(--lime-bg)', border: '1px solid rgba(217,255,54,.15)', padding: '18px' }}>
+                    <p className="eyebrow" style={{ margin: '0 0 10px', color: 'var(--lime)' }}>NEXT STEPS FOR SELECTED MEMBERS</p>
+                    <ul style={{ margin: 0, paddingLeft: '16px', fontSize: '13px', color: 'var(--muted-2)', lineHeight: '1.9' }}>
+                      <li>Add <b style={{ color: 'var(--text)' }}>FZ</b> before your In-Game Name (e.g. <b style={{ color: 'var(--lime)' }}>FZ {result.ign}</b>).</li>
+                      <li>Maintain guild activity at least <b style={{ color: 'var(--text)' }}>3 times per week</b>.</li>
+                      <li>Participate in Guild War pushing on the FAIZ 777 YouTube channel.</li>
+                    </ul>
+                  </div>
                 </div>
-                <dl style={{ margin: '20px 0' }}>
-                  <dt>Application ID</dt>
-                  <dd><b>{result.application_id}</b></dd>
-                  <dt>In-Game Name</dt>
-                  <dd><b>FZ • {result.ign}</b></dd>
-                  <dt>Free Fire UID</dt>
-                  <dd>{result.uid}</dd>
-                  <dt>Guild Role</dt>
-                  <dd><span style={{ color: 'var(--lime)' }}>{result.role}</span></dd>
-                  <dt>Reviewed By</dt>
-                  <dd>{result.reviewed_by || 'Admin Bhuvi'}</dd>
-                  <dt>Status</dt>
-                  <dd><StatusBadge status="selected" /></dd>
-                </dl>
-
-                {/* Exclusive WhatsApp Group Link */}
-                <div className="whatsapp-box" style={{ width: '100%', margin: '20px 0' }}>
-                  <h3><MessageCircle size={20} /> OFFICIAL GUILD WHATSAPP GROUP</h3>
-                  <p>Welcome to FAIZ 777! Join the official WhatsApp group below to receive your Room Match slot, tournament details, and guild squad communication.</p>
-                  <a className="btn whatsapp" href={whatsappLink} target="_blank" rel="noreferrer" style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
-                    <MessageCircle size={18} /> JOIN OFFICIAL WHATSAPP GROUP <ExternalLink size={15} />
-                  </a>
+              ) : result.status === 'rejected' ? (
+                <div className="status-card-rejected">
+                  <div style={{ background: 'rgba(56,22,20,.5)', border: '1px solid rgba(107,36,30,.6)', padding: '20px', marginBottom: '22px' }}>
+                    <strong style={{ font: '700 15px Syne', display: 'block', marginBottom: '8px', color: '#ff8c80' }}>APPLICATION STATUS: NOT SELECTED</strong>
+                    <span style={{ fontSize: '13px', color: 'var(--muted-2)', lineHeight: '1.7', display: 'block' }}>
+                      Your application was not selected at this time. Thank you for your interest. You may apply again when the next recruitment season opens.
+                    </span>
+                  </div>
+                  <dl>
+                    <dt>Application ID</dt><dd>{result.application_id}</dd>
+                    <dt>In-Game Name</dt><dd>{result.ign}</dd>
+                    <dt>Free Fire UID</dt><dd>{result.uid}</dd>
+                    <dt>Status</dt><dd><StatusBadge status="rejected" /></dd>
+                    <dt>Applied Date</dt><dd>{new Date(result.created_at).toLocaleDateString('en-IN')}</dd>
+                  </dl>
                 </div>
-
-                <div className="selected-rules-checklist" style={{ background: '#141812', border: '1px solid #2f382a', padding: '18px', marginTop: '15px' }}>
-                  <p className="eyebrow" style={{ margin: '0 0 8px' }}>NEXT STEPS FOR SELECTED MEMBERS</p>
-                  <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '12px', color: 'var(--muted)', lineHeight: '1.8' }}>
-                    <li>Add <b>FZ</b> before your In-Game Name (e.g. <b>FZ {result.ign}</b>).</li>
-                    <li>Maintain guild activity at least <b>3 times per week</b>.</li>
-                    <li>Participate in Guild War pushing live streams on the FAIZ 777 YouTube channel.</li>
-                  </ul>
+              ) : (
+                <div className="status-card-pending">
+                  <div style={{ background: 'rgba(40,35,16,.6)', border: '1px solid rgba(90,75,30,.5)', padding: '20px', marginBottom: '22px' }}>
+                    <strong style={{ font: '700 15px Syne', display: 'block', marginBottom: '8px', color: '#ffe17c' }}>APPLICATION UNDER REVIEW</strong>
+                    <span style={{ fontSize: '13px', color: 'var(--muted-2)', lineHeight: '1.7', display: 'block' }}>
+                      Your application has been received. Admin Bhuvi is currently reviewing your profile and gameplay details.
+                    </span>
+                  </div>
+                  <dl>
+                    <dt>Application ID</dt><dd><b>{result.application_id}</b></dd>
+                    <dt>In-Game Name</dt><dd>{result.ign}</dd>
+                    <dt>Free Fire UID</dt><dd>{result.uid}</dd>
+                    <dt>Preferred Role</dt><dd style={{ color: 'var(--lime)', fontWeight: '700' }}>{result.role}</dd>
+                    <dt>Status</dt><dd><StatusBadge status="under_review" /></dd>
+                    <dt>Submitted</dt><dd>{new Date(result.created_at).toLocaleDateString('en-IN')}</dd>
+                  </dl>
+                  <div className="whatsapp-box" style={{ width: '100%', marginTop: '20px' }}>
+                    <h3><MessageCircle size={17} /> APPLICANT WHATSAPP GROUP</h3>
+                    <p>Room Match ID & Password for trials are announced exclusively in the official WhatsApp group.</p>
+                    <a className="btn whatsapp" href={whatsappLink} target="_blank" rel="noreferrer" style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
+                      <MessageCircle size={15} /> JOIN WHATSAPP GROUP <ExternalLink size={13} />
+                    </a>
+                  </div>
                 </div>
-              </div>
-            ) : result.status === 'rejected' ? (
-              <div className="status-card-rejected">
-                <div style={{ background: '#381614', border: '1px solid #6b241e', padding: '20px', color: '#ff8c80', marginBottom: '20px' }}>
-                  <strong style={{ font: '700 16px Syne', display: 'block', marginBottom: '6px' }}>APPLICATION STATUS: NOT SELECTED</strong>
-                  <span style={{ fontSize: '13px', color: '#ffd6d2', lineHeight: '1.6', display: 'block' }}>
-                    Your application was not selected at this time. Thank you for your interest in joining FAIZ 777. You may submit a new application when the next recruitment season opens.
-                  </span>
-                </div>
-                <dl>
-                  <dt>Application ID</dt>
-                  <dd>{result.application_id}</dd>
-                  <dt>In-Game Name</dt>
-                  <dd>{result.ign}</dd>
-                  <dt>Free Fire UID</dt>
-                  <dd>{result.uid}</dd>
-                  <dt>Status</dt>
-                  <dd><StatusBadge status="rejected" /></dd>
-                  <dt>Applied Date</dt>
-                  <dd>{new Date(result.created_at).toLocaleDateString()}</dd>
-                </dl>
-              </div>
-            ) : (
-              <div className="status-card-pending">
-                <div style={{ background: '#282310', border: '1px solid #5a4b1e', padding: '20px', color: '#ffe17c', marginBottom: '20px' }}>
-                  <strong style={{ font: '700 16px Syne', display: 'block', marginBottom: '6px' }}>APPLICATION UNDER REVIEW</strong>
-                  <span style={{ fontSize: '13px', color: '#fff3c8', lineHeight: '1.6', display: 'block' }}>
-                    Your application has been successfully received. Our admin team (Admin Bhuvi) is currently reviewing your profile and gameplay details.
-                  </span>
-                </div>
-                <dl>
-                  <dt>Application ID</dt>
-                  <dd><b>{result.application_id}</b></dd>
-                  <dt>In-Game Name</dt>
-                  <dd>{result.ign}</dd>
-                  <dt>Free Fire UID</dt>
-                  <dd>{result.uid}</dd>
-                  <dt>Preferred Role</dt>
-                  <dd>{result.role}</dd>
-                  <dt>Application Status</dt>
-                  <dd><StatusBadge status="under_review" /></dd>
-                  <dt>Submission Date</dt>
-                  <dd>{new Date(result.created_at).toLocaleString()}</dd>
-                </dl>
-
-                {/* WhatsApp Group for Room Match Coordination */}
-                <div className="whatsapp-box" style={{ width: '100%', marginTop: '20px' }}>
-                  <h3><MessageCircle size={18} /> APPLICANT WHATSAPP GROUP</h3>
-                  <p>Room Match ID & Password for recruitment trials are announced exclusively in the official WhatsApp group.</p>
-                  <a className="btn whatsapp" href={whatsappLink} target="_blank" rel="noreferrer" style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
-                    <MessageCircle size={16} /> JOIN WHATSAPP GROUP FOR MATCH ID <ExternalLink size={14} />
-                  </a>
-                </div>
-              </div>
-            )}
+              )}
+            </div>
           </motion.article>
         )}
       </section>
@@ -939,14 +1428,16 @@ function Members() {
   const shown = useMemo(() => members.filter(m => (filter === 'ALL' || m.role === filter) && m.ign.toLowerCase().includes(query.toLowerCase())), [members, filter, query])
   return (
     <Layout>
-      <PageHero eyebrow="FAIZ 777 / THE ROSTER" title={<>FAIZ 777 <em>MEMBERS.</em></>} />
-      <section className="content members">
+      <PageHero eyebrow="FAIZ 777 / THE OFFICIAL ROSTER" title={<>FAIZ 777 <em>MEMBERS.</em></>}>
+        <p className="lede">The verified warriors of FAIZ 777. Approved by Admin Bhuvi through rigorous room-match trials.</p>
+      </PageHero>
+      <section className="members">
         <div className="member-toolbar">
           <div>
             {['ALL', ...roles.map(x => x.toUpperCase())].map(x => (
-              <button 
-                key={x} 
-                className={filter === x || (x === 'ALL' && filter === 'ALL') ? 'active' : ''} 
+              <button
+                key={x}
+                className={filter === (x === 'ALL' ? 'ALL' : x[0] + x.slice(1).toLowerCase()) ? 'active' : ''}
                 onClick={() => setFilter(x === 'ALL' ? 'ALL' : x[0] + x.slice(1).toLowerCase())}
               >
                 {x}
@@ -954,29 +1445,38 @@ function Members() {
             ))}
           </div>
           <label>
-            <Search size={15} />
-            <input placeholder="Search In-Game Name" value={query} onChange={e => setQuery(e.target.value)} />
+            <Search size={14} />
+            <input placeholder="Search player IGN" value={query} onChange={e => setQuery(e.target.value)} />
           </label>
         </div>
         {loading ? (
           <Spinner label="Loading members..." />
         ) : shown.length ? (
           <div className="member-grid">
-            {shown.map(m => (
-              <article className="member-card" key={m.id}>
-                <div className="avatar">{m.profile_image ? <img src={m.profile_image} alt="" /> : m.ign.slice(0, 1)}</div>
+            {shown.map((m, idx) => (
+              <motion.article
+                className="member-card"
+                key={m.id}
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.04, duration: 0.35 }}
+              >
+                <div className="avatar">
+                  {m.profile_image ? <img src={m.profile_image} alt={m.ign} /> : m.ign?.slice(0, 1)?.toUpperCase()}
+                </div>
                 <StatusBadge status="ACTIVE" />
                 <h2>{m.ign}</h2>
                 <p>{m.uid}</p>
                 <strong>{m.role}</strong>
-                <small>MEMBER SINCE {new Date(m.member_since).toLocaleDateString()}</small>
-              </article>
+                <small>MEMBER SINCE {new Date(m.member_since).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</small>
+              </motion.article>
             ))}
           </div>
         ) : (
           <div className="empty">
-            <Users />
-            No members found.
+            <Users size={40} />
+            <strong>No members found.</strong>
+            <p>{query || filter !== 'ALL' ? 'Try changing your search or filter.' : 'The roster is currently empty.'}</p>
           </div>
         )}
       </section>
@@ -1677,5 +2177,25 @@ function ApplicationDetails({ app, close, status, remove }) {
   );
 }
 
-function App() { return <BrowserRouter><Routes><Route path="/" element={<Home />} /><Route path="/recruitment" element={<Recruitment />} /><Route path="/rules" element={<Rules />} /><Route path="/matches" element={<Matches />} /><Route path="/members" element={<Members />} /><Route path="/status" element={<Status />} /><Route path="/admin" element={<Admin />} /><Route path="*" element={<Navigate to="/" replace />} /></Routes></BrowserRouter> }
+function App() {
+  const [loading, setLoading] = useState(true)
+
+  return (
+    <BrowserRouter>
+      <AnimatePresence>
+        {loading && <LoadingScreen onFinish={() => setLoading(false)} />}
+      </AnimatePresence>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/recruitment" element={<Recruitment />} />
+        <Route path="/rules" element={<Rules />} />
+        <Route path="/matches" element={<Matches />} />
+        <Route path="/members" element={<Members />} />
+        <Route path="/status" element={<Status />} />
+        <Route path="/admin" element={<Admin />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </BrowserRouter>
+  )
+}
 createRoot(document.getElementById('root')).render(<App />)
