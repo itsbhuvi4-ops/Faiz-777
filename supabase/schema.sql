@@ -273,12 +273,24 @@ begin
   return jsonb_build_object('success', true, 'deleted_id', app.application_id);
 end $$;
 
--- 12. Permissions & Row Level Security (RLS)
-grant execute on function public.submit_application(jsonb) to anon, authenticated;
-grant execute on function public.get_application_status(text) to anon, authenticated;
-grant execute on function public.admin_select_application(uuid, text) to anon, authenticated;
-grant execute on function public.admin_reject_application(uuid, text) to anon, authenticated;
-grant execute on function public.admin_delete_application(uuid) to anon, authenticated;
+-- 12. Performance Indexes
+create index if not exists idx_applications_uid on public.applications(uid);
+create index if not exists idx_applications_app_id on public.applications(application_id);
+create index if not exists idx_applications_status on public.applications(status);
+create index if not exists idx_members_uid on public.members(uid);
+create index if not exists idx_members_active on public.members(active);
+
+-- 13. Permissions & Row Level Security (RLS)
+grant usage on schema public to anon, authenticated, service_role;
+grant all on all tables in schema public to anon, authenticated, service_role;
+grant all on all sequences in schema public to anon, authenticated, service_role;
+grant all on all routines in schema public to anon, authenticated, service_role;
+
+grant execute on function public.submit_application(jsonb) to anon, authenticated, service_role;
+grant execute on function public.get_application_status(text) to anon, authenticated, service_role;
+grant execute on function public.admin_select_application(uuid, text) to anon, authenticated, service_role;
+grant execute on function public.admin_reject_application(uuid, text) to anon, authenticated, service_role;
+grant execute on function public.admin_delete_application(uuid) to anon, authenticated, service_role;
 
 alter table public.applications enable row level security;
 alter table public.members enable row level security;
@@ -298,9 +310,9 @@ drop policy if exists "allow all match_registrations" on public.match_registrati
 drop policy if exists "allow all match_results" on public.match_results;
 
 -- Create clean open policies for project web app
-create policy "allow all applications" on public.applications for all to anon, authenticated using (true) with check (true);
-create policy "allow all members" on public.members for all to anon, authenticated using (true) with check (true);
-create policy "allow all settings" on public.settings for all to anon, authenticated using (true) with check (true);
-create policy "allow all matches" on public.matches for all to anon, authenticated using (true) with check (true);
-create policy "allow all match_registrations" on public.match_registrations for all to anon, authenticated using (true) with check (true);
-create policy "allow all match_results" on public.match_results for all to anon, authenticated using (true) with check (true);
+create policy "allow all applications" on public.applications for all to anon, authenticated, service_role using (true) with check (true);
+create policy "allow all members" on public.members for all to anon, authenticated, service_role using (true) with check (true);
+create policy "allow all settings" on public.settings for all to anon, authenticated, service_role using (true) with check (true);
+create policy "allow all matches" on public.matches for all to anon, authenticated, service_role using (true) with check (true);
+create policy "allow all match_registrations" on public.match_registrations for all to anon, authenticated, service_role using (true) with check (true);
+create policy "allow all match_results" on public.match_results for all to anon, authenticated, service_role using (true) with check (true);

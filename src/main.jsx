@@ -908,7 +908,93 @@ function Status() {
   );
 }
 
-function Members() { const [members, setMembers] = useState([]), [loading, setLoading] = useState(true), [filter, setFilter] = useState('ALL'), [query, setQuery] = useState(''); useEffect(() => { if (!isConfigured) { setLoading(false); return } supabase.from('members').select('*').eq('active', true).order('member_since', { ascending: false }).then(({ data }) => { setMembers(data || []); setLoading(false) }) }, []); const shown = useMemo(() => members.filter(m => (filter === 'ALL' || m.role === filter) && m.ign.toLowerCase().includes(query.toLowerCase())), [members, filter, query]); return <Layout><><PageHero eyebrow="FAIZ 777 / THE ROSTER" title={<>FAIZ 777 <em>MEMBERS.</em></>} /><section className="content members"><div className="member-toolbar"><div>{['ALL', ...roles.map(x => x.toUpperCase())].map(x => <button className={filter === x || (x === 'ALL' && filter === 'ALL') ? 'active' : ''} onClick={() => setFilter(x === 'ALL' ? 'ALL' : x[0] + x.slice(1).toLowerCase())} key={x}>{x}</button>)}</div><label><Search size={15} /><input placeholder="Search In-Game Name" value={query} onChange={e => setQuery(e.target.value)} /></label></div>{loading ? <Spinner label="Loading members..." /> : shown.length ? <div className="member-grid">{shown.map(m => <article className="member-card" key={m.id}><div className="avatar">{m.profile_image ? <img src={m.profile_image} alt="" /> : m.ign.slice(0, 1)}</div><StatusBadge status="ACTIVE" /><h2>{m.ign}</h2><p>{m.uid}</p><strong>{m.role}</strong><small>MEMBER SINCE {new Date(m.member_since).toLocaleDateString()}</small></article>)}</div> : <div className="empty"><Users />No members found.</div>}</section></></Layout> }
+function Members() {
+  const [members, setMembers] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [filter, setFilter] = useState('ALL')
+  const [query, setQuery] = useState('')
+
+  const fetchMembers = async () => {
+    if (!isConfigured || !supabase) {
+      setLoading(false)
+      return
+    }
+    try {
+      const { data } = await supabase.from('members').select('*').eq('active', true).order('member_since', { ascending: false })
+      setMembers(data || [])
+    } catch (e) {
+      console.warn('Members fetch error:', e)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchMembers()
+    const interval = setInterval(fetchMembers, 5000)
+    let channel = null
+    if (supabase) {
+      try {
+        channel = supabase.channel('members_realtime_sync')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'members' }, () => {
+            fetchMembers()
+          })
+          .subscribe()
+      } catch (e) {}
+    }
+    return () => {
+      clearInterval(interval)
+      if (channel) supabase?.removeChannel(channel)
+    }
+  }, [])
+
+  const shown = useMemo(() => members.filter(m => (filter === 'ALL' || m.role === filter) && m.ign.toLowerCase().includes(query.toLowerCase())), [members, filter, query])
+  return (
+    <Layout>
+      <PageHero eyebrow="FAIZ 777 / THE ROSTER" title={<>FAIZ 777 <em>MEMBERS.</em></>} />
+      <section className="content members">
+        <div className="member-toolbar">
+          <div>
+            {['ALL', ...roles.map(x => x.toUpperCase())].map(x => (
+              <button 
+                key={x} 
+                className={filter === x || (x === 'ALL' && filter === 'ALL') ? 'active' : ''} 
+                onClick={() => setFilter(x === 'ALL' ? 'ALL' : x[0] + x.slice(1).toLowerCase())}
+              >
+                {x}
+              </button>
+            ))}
+          </div>
+          <label>
+            <Search size={15} />
+            <input placeholder="Search In-Game Name" value={query} onChange={e => setQuery(e.target.value)} />
+          </label>
+        </div>
+        {loading ? (
+          <Spinner label="Loading members..." />
+        ) : shown.length ? (
+          <div className="member-grid">
+            {shown.map(m => (
+              <article className="member-card" key={m.id}>
+                <div className="avatar">{m.profile_image ? <img src={m.profile_image} alt="" /> : m.ign.slice(0, 1)}</div>
+                <StatusBadge status="ACTIVE" />
+                <h2>{m.ign}</h2>
+                <p>{m.uid}</p>
+                <strong>{m.role}</strong>
+                <small>MEMBER SINCE {new Date(m.member_since).toLocaleDateString()}</small>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className="empty">
+            <Users />
+            No members found.
+          </div>
+        )}
+      </section>
+    </Layout>
+  )
+}
 
 function Admin() {
   const [session, setSession] = useState(() => localStorage.getItem('faiz_admin_auth') === 'true' ? { user: { username: 'Bhuvi', id: 'admin-bhuvi' } } : null);
