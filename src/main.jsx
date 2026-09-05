@@ -693,13 +693,66 @@ function Input({ label, ...props }) { return <label>{label}<input {...props} /><
 function Status() {
   const [id, setId] = useState(() => {
     try {
-      return JSON.parse(localStorage.getItem('faiz_registered_applicant'))?.applicationId || '';
+      const saved = JSON.parse(localStorage.getItem('faiz_registered_applicant'));
+      return saved?.applicationId || saved?.uid || '';
     } catch (e) {
       return '';
     }
   });
   const [result, setResult] = useState(null), [error, setError] = useState(''), [loading, setLoading] = useState(false);
   const [whatsappLink, setWhatsappLink] = useState(() => localStorage.getItem('faiz_whatsapp_group') || 'https://chat.whatsapp.com/');
+
+  const doLookup = async (lookupTerm, silent = false) => {
+    const term = (lookupTerm || '').toString().trim();
+    if (!term) return;
+    if (!isConfigured) {
+      if (!silent) setError('Application lookup is unavailable until the secure backend is configured.');
+      return;
+    }
+    if (!silent) {
+      setLoading(true);
+      setError('');
+    }
+
+    try {
+      // 1. Try secure RPC lookup
+      let foundData = null;
+      const { data: rpcData, error: rpcErr } = await supabase.rpc('get_application_status', { lookup_id: term.toUpperCase() });
+      if (!rpcErr && rpcData && rpcData.length > 0) {
+        foundData = rpcData[0];
+      }
+
+      // 2. Fallback search by application_id or Free Fire UID
+      if (!foundData) {
+        const { data: tableData } = await supabase
+          .from('applications')
+          .select('application_id,ign,uid,role,status,created_at,reviewed_at,reviewed_by')
+          .or(`application_id.ilike.%${term}%,uid.eq.${term}`)
+          .limit(1)
+          .maybeSingle();
+        if (tableData) {
+          foundData = tableData;
+        }
+      }
+
+      if (foundData) {
+        setResult(foundData);
+        if (!silent) setError('');
+      } else {
+        if (!silent) {
+          setResult(null);
+          setError(`No application found for "${term}". Please verify your Application ID or Free Fire UID.`);
+        }
+      }
+    } catch (e) {
+      if (!silent) {
+        setResult(null);
+        setError('Failed to fetch application status. Please try again.');
+      }
+    } finally {
+      if (!silent) setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (isConfigured) {
@@ -710,66 +763,147 @@ function Status() {
         }
       });
     }
-  }, []);
+
+    // Auto-check if application ID is prefilled on mount
+    if (id) {
+      doLookup(id);
+    }
+
+    // Real-time synchronization polling every 5s so when Admin changes status, user sees it live
+    const interval = setInterval(() => {
+      if (id) doLookup(id, true);
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [id]);
 
   const check = async e => {
     e.preventDefault();
-    if (!id.trim()) return setError('Enter your Application ID.');
-    if (!isConfigured) return setError('Application lookup is unavailable until the secure backend is configured.');
-    setLoading(true);
-    setError('');
-    const { data, error: err } = await supabase.rpc('get_application_status', { lookup_id: id.trim().toUpperCase() });
-    setLoading(false);
-    if (err || !data?.length) {
-      setResult(null);
-      return setError('No application found for this ID.');
-    }
-    setResult(data[0]);
+    if (!id.trim()) return setError('Enter your Application ID or Free Fire UID.');
+    doLookup(id);
   };
 
   return (
     <Layout>
-      <PageHero eyebrow="FAIZ 777 / APPLICATION TRACKER" title={<>APPLICATION <em>STATUS.</em></>} />
+      <PageHero eyebrow="FAIZ 777 / APPLICATION TRACKER" title={<>APPLICATION <em>STATUS.</em></>}>
+        <p className="lede">Track your recruitment application live. All decisions made by Admin Bhuvi update here in real-time.</p>
+      </PageHero>
       <section className="status-wrap">
         <form className="status-form" onSubmit={check}>
           <label>
-            APPLICATION ID
-            <input value={id} onChange={e => setId(e.target.value)} placeholder="FAIZ-2026-0001" />
+            APPLICATION ID OR FREE FIRE UID
+            <input value={id} onChange={e => setId(e.target.value)} placeholder="e.g. FAIZ-2026-0001 or 123456789" />
           </label>
           <button className="btn lime" disabled={loading}>
             {loading ? <LoaderCircle className="spin" /> : <Search size={16} />} CHECK STATUS
           </button>
           {error && <p className="form-error">{error}</p>}
         </form>
+
         {result && (
           <motion.article className="status-result" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-            <StatusBadge status={result.status} />
-            <h2>{result.ign}</h2>
-            <dl>
-              <dt>Application ID</dt>
-              <dd>{result.application_id}</dd>
-              <dt>Free Fire UID</dt>
-              <dd>{result.uid}</dd>
-              <dt>Preferred Role</dt>
-              <dd>{result.role}</dd>
-              <dt>Application Date</dt>
-              <dd>{new Date(result.created_at).toLocaleDateString()}</dd>
-            </dl>
-            {result.status === 'selected' && (
-              <div className="congrats">
-                🎉 CONGRATULATIONS!<br />
-                <span>You have been selected for FAIZ 777.</span>
+            {/* Status Header Badge */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+              <StatusBadge status={result.status === 'pending' ? 'under_review' : result.status} />
+              <small style={{ font: '9px "DM Mono"', color: 'var(--muted)', letterSpacing: '0.08em' }}>
+                {result.status === 'selected' ? '🟢 APPROVED' : result.status === 'rejected' ? '🔴 NOT SELECTED' : '🟡 UNDER REVIEW'}
+              </small>
+            </div>
+
+            {/* Status Card Content based on Result */}
+            {result.status === 'selected' ? (
+              <div className="status-card-selected">
+                <div className="congrats">
+                  🎉 CONGRATULATIONS!<br />
+                  <span>You have been officially selected by Admin Bhuvi to join FAIZ 777.</span>
+                </div>
+                <dl style={{ margin: '20px 0' }}>
+                  <dt>Application ID</dt>
+                  <dd><b>{result.application_id}</b></dd>
+                  <dt>In-Game Name</dt>
+                  <dd><b>FZ • {result.ign}</b></dd>
+                  <dt>Free Fire UID</dt>
+                  <dd>{result.uid}</dd>
+                  <dt>Guild Role</dt>
+                  <dd><span style={{ color: 'var(--lime)' }}>{result.role}</span></dd>
+                  <dt>Reviewed By</dt>
+                  <dd>{result.reviewed_by || 'Admin Bhuvi'}</dd>
+                  <dt>Status</dt>
+                  <dd><StatusBadge status="selected" /></dd>
+                </dl>
+
+                {/* Exclusive WhatsApp Group Link */}
+                <div className="whatsapp-box" style={{ width: '100%', margin: '20px 0' }}>
+                  <h3><MessageCircle size={20} /> OFFICIAL GUILD WHATSAPP GROUP</h3>
+                  <p>Welcome to FAIZ 777! Join the official WhatsApp group below to receive your Room Match slot, tournament details, and guild squad communication.</p>
+                  <a className="btn whatsapp" href={whatsappLink} target="_blank" rel="noreferrer" style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
+                    <MessageCircle size={18} /> JOIN OFFICIAL WHATSAPP GROUP <ExternalLink size={15} />
+                  </a>
+                </div>
+
+                <div className="selected-rules-checklist" style={{ background: '#141812', border: '1px solid #2f382a', padding: '18px', marginTop: '15px' }}>
+                  <p className="eyebrow" style={{ margin: '0 0 8px' }}>NEXT STEPS FOR SELECTED MEMBERS</p>
+                  <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '12px', color: 'var(--muted)', lineHeight: '1.8' }}>
+                    <li>Add <b>FZ</b> before your In-Game Name (e.g. <b>FZ {result.ign}</b>).</li>
+                    <li>Maintain guild activity at least <b>3 times per week</b>.</li>
+                    <li>Participate in Guild War pushing live streams on the FAIZ 777 YouTube channel.</li>
+                  </ul>
+                </div>
+              </div>
+            ) : result.status === 'rejected' ? (
+              <div className="status-card-rejected">
+                <div style={{ background: '#381614', border: '1px solid #6b241e', padding: '20px', color: '#ff8c80', marginBottom: '20px' }}>
+                  <strong style={{ font: '700 16px Syne', display: 'block', marginBottom: '6px' }}>APPLICATION STATUS: NOT SELECTED</strong>
+                  <span style={{ fontSize: '13px', color: '#ffd6d2', lineHeight: '1.6', display: 'block' }}>
+                    Your application was not selected at this time. Thank you for your interest in joining FAIZ 777. You may submit a new application when the next recruitment season opens.
+                  </span>
+                </div>
+                <dl>
+                  <dt>Application ID</dt>
+                  <dd>{result.application_id}</dd>
+                  <dt>In-Game Name</dt>
+                  <dd>{result.ign}</dd>
+                  <dt>Free Fire UID</dt>
+                  <dd>{result.uid}</dd>
+                  <dt>Status</dt>
+                  <dd><StatusBadge status="rejected" /></dd>
+                  <dt>Applied Date</dt>
+                  <dd>{new Date(result.created_at).toLocaleDateString()}</dd>
+                </dl>
+              </div>
+            ) : (
+              <div className="status-card-pending">
+                <div style={{ background: '#282310', border: '1px solid #5a4b1e', padding: '20px', color: '#ffe17c', marginBottom: '20px' }}>
+                  <strong style={{ font: '700 16px Syne', display: 'block', marginBottom: '6px' }}>APPLICATION UNDER REVIEW</strong>
+                  <span style={{ fontSize: '13px', color: '#fff3c8', lineHeight: '1.6', display: 'block' }}>
+                    Your application has been successfully received. Our admin team (Admin Bhuvi) is currently reviewing your profile and gameplay details.
+                  </span>
+                </div>
+                <dl>
+                  <dt>Application ID</dt>
+                  <dd><b>{result.application_id}</b></dd>
+                  <dt>In-Game Name</dt>
+                  <dd>{result.ign}</dd>
+                  <dt>Free Fire UID</dt>
+                  <dd>{result.uid}</dd>
+                  <dt>Preferred Role</dt>
+                  <dd>{result.role}</dd>
+                  <dt>Application Status</dt>
+                  <dd><StatusBadge status="under_review" /></dd>
+                  <dt>Submission Date</dt>
+                  <dd>{new Date(result.created_at).toLocaleString()}</dd>
+                </dl>
+
+                {/* WhatsApp Group for Room Match Coordination */}
+                <div className="whatsapp-box" style={{ width: '100%', marginTop: '20px' }}>
+                  <h3><MessageCircle size={18} /> APPLICANT WHATSAPP GROUP</h3>
+                  <p>Room Match ID & Password for recruitment trials are announced exclusively in the official WhatsApp group.</p>
+                  <a className="btn whatsapp" href={whatsappLink} target="_blank" rel="noreferrer" style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
+                    <MessageCircle size={16} /> JOIN WHATSAPP GROUP FOR MATCH ID <ExternalLink size={14} />
+                  </a>
+                </div>
               </div>
             )}
-
-            {/* Exclusive WhatsApp Group Link for Registered Applicants Only */}
-            <div className="whatsapp-box" style={{ width: '100%', marginTop: '25px' }}>
-              <h3><MessageCircle size={20} /> REGISTERED APPLICANT WHATSAPP GROUP</h3>
-              <p>Your application is verified ({result.ign} · {result.application_id}). Join the WhatsApp group below to receive the Room Match ID and Password.</p>
-              <a className="btn whatsapp" href={whatsappLink} target="_blank" rel="noreferrer" style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
-                <MessageCircle size={18} /> JOIN WHATSAPP GROUP <ExternalLink size={15} />
-              </a>
-            </div>
           </motion.article>
         )}
       </section>
@@ -1108,6 +1242,8 @@ function AdminDashboard({ onLogout }) {
         await supabase.from('applications').update({ status }).eq('id', app.id);
         if (status === 'selected') {
           await supabase.from('members').upsert({ ign: app.ign, uid: app.uid, role: app.role, member_since: new Date().toISOString().slice(0, 10), active: true }, { onConflict: 'uid' });
+        } else if (status === 'rejected') {
+          await supabase.from('members').delete().eq('uid', app.uid);
         }
       } catch (e) {}
     }
@@ -1120,6 +1256,7 @@ function AdminDashboard({ onLogout }) {
     if (supabase) {
       try {
         await supabase.from('applications').delete().eq('id', app.id);
+        await supabase.from('members').delete().eq('uid', app.uid);
       } catch (e) {}
     }
     // Clear local storage lock if deleted
