@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Link, NavLink, Navigate, Route, Routes, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowRight, Check, ChevronLeft, Copy, ExternalLink, Flame, LoaderCircle, LockKeyhole, Menu, MessageCircle, Play, Search, ShieldCheck, Trophy, Users, X } from 'lucide-react'
+import { ArrowRight, Check, ChevronLeft, Copy, ExternalLink, Flame, LoaderCircle, LockKeyhole, Menu, MessageCircle, Play, Search, ShieldCheck, Users, X } from 'lucide-react'
 import { isConfigured, supabase } from './lib/supabase'
 import './style.css'
 
@@ -23,16 +23,6 @@ function Navbar() {
 }
 function Footer() { return <footer><div><Brand /><p>FREE FIRE GUILD</p><strong>PLAY HARD • STAY ACTIVE • DOMINATE</strong></div><div className="footerlinks"><Link to="/">Home</Link><Link to="/recruitment">Recruitment</Link><Link to="/rules">Rules</Link><Link to="/matches">Matches</Link><Link to="/members">Members</Link><Link to="/status">Application Status</Link></div><div className="social"><a href={YOUTUBE} target="_blank" rel="noreferrer"><Play /> YouTube</a><span>Instagram</span><span>WhatsApp</span></div><small>© 2026 FAIZ 777. All rights reserved.<br />FAIZ 777 is an independent gaming community and is not affiliated with Garena.</small></footer> }
 function Layout({ children }) { return <><Navbar /><main>{children}</main><Footer /></> }
-
-function LeaderboardPreview() {
-  const [results, setResults] = useState([])
-  useEffect(() => {
-    if (isConfigured) {
-      supabase.from('match_results').select('ign,position,kills,points,is_winner').order('points', { ascending: false }).order('kills', { ascending: false }).limit(5).then(({ data }) => setResults(data || []))
-    }
-  }, [])
-  return <section className="leaderboard-section"><p className="eyebrow">03 / ROOM MATCH RESULTS</p><div className="leaderboard-title"><div><h2>PLAYER <em>LEADERBOARD.</em></h2><p>Official results published by the FAIZ 777 admin team.</p></div><Trophy /></div>{results.length ? <div className="leaderboard-list">{results.map((entry, index) => <article key={`${entry.ign}-${index}`} className={entry.is_winner ? 'winner' : ''}><strong>#{entry.position || index + 1}</strong><span>{entry.ign}{entry.is_winner && <small> WINNER</small>}</span><b>{entry.points} PTS</b><i>{entry.kills} KILLS</i></article>)}</div> : <div className="empty"><Trophy />Results will appear here after the room match.</div>}</section>
-}
 
 function SelectedRecruitsLive() {
   const [selectedList, setSelectedList] = useState([])
@@ -252,8 +242,6 @@ function Home() {
 
         {/* Dynamic Selected Recruits Section (Live sync across all devices) */}
         <SelectedRecruitsLive />
-
-        <LeaderboardPreview />
       </>
     </Layout>
   )
