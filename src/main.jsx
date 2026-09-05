@@ -6,7 +6,7 @@ import { ArrowRight, Check, ChevronLeft, Copy, ExternalLink, Flame, LoaderCircle
 import { isConfigured, supabase } from './lib/supabase'
 import './style.css'
 
-const YOUTUBE = 'https://youtube.com/@faiz777gaming-n8i?si=gZdpJ1OVehVuaKoE'
+const YOUTUBE = 'https://chat.whatsapp.com/Ll7lo4R3C2d6PFGRIjLX4m'
 const roles = ['Rusher', 'Sniper', 'Support', 'IGL']
 const matchRules = ['𝗡𝗢 𝗥𝗢𝗢𝗙', '𝗡𝗢 𝗣𝗔𝗡𝗘𝗟', '𝗡𝗢 𝗪𝗔𝗟𝗟 𝗕𝗥𝗘𝗔𝗞', '𝗡𝗢 𝗧𝗘𝗔𝗠 𝗨𝗣', '𝗢𝗡𝗟𝗬 𝗙𝗔𝗖𝗘 𝗧𝗢 𝗙𝗔𝗖𝗘', '𝗡𝗢 𝗪𝗔𝗟𝗟 𝗕𝗥𝗘𝗔𝗞', '𝗡𝗢 𝗭𝗢𝗡𝗘 𝗕𝗥𝗘𝗔𝗞']
 const blankForm = { full_name: '', ign: '', uid: '', age: '', state: '', district: '', country: '', role: '', whatsapp: '', instagram: '', reason: '', rules_accepted: false }
@@ -298,7 +298,7 @@ function HomeStatusSection() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [result, setResult] = useState(null)
-  const [whatsappLink, setWhatsappLink] = useState(() => localStorage.getItem('faiz_whatsapp_group') || 'https://chat.whatsapp.com/')
+  const [whatsappLink, setWhatsappLink] = useState(() => localStorage.getItem('faiz_whatsapp_group') || 'https://chat.whatsapp.com/Ll7lo4R3C2d6PFGRIjLX4m')
 
   useEffect(() => {
     if (isConfigured) {
@@ -516,7 +516,7 @@ function Home() {
     }
   })
   const [liveStatus, setLiveStatus] = useState(null)
-  const [whatsappLink, setWhatsappLink] = useState(() => localStorage.getItem('faiz_whatsapp_group') || 'https://chat.whatsapp.com/')
+  const [whatsappLink, setWhatsappLink] = useState(() => localStorage.getItem('faiz_whatsapp_group') || 'https://chat.whatsapp.com/Ll7lo4R3C2d6PFGRIjLX4m')
 
   useEffect(() => {
     if (isConfigured) {
@@ -814,7 +814,7 @@ function Matches() {
 function Recruitment() {
   const [step, setStep] = useState(1), [form, setForm] = useState(blankForm), [error, setError] = useState(''), [loading, setLoading] = useState(false), [success, setSuccess] = useState(null);
   const [recruitmentStatus, setRecruitmentStatus] = useState(() => localStorage.getItem('faiz_recruitment_status') || 'open');
-  const [whatsappLink, setWhatsappLink] = useState(() => localStorage.getItem('faiz_whatsapp_group') || 'https://chat.whatsapp.com/');
+  const [whatsappLink, setWhatsappLink] = useState(() => localStorage.getItem('faiz_whatsapp_group') || 'https://chat.whatsapp.com/Ll7lo4R3C2d6PFGRIjLX4m');
   const [existingReg, setExistingReg] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem('faiz_registered_applicant'));
@@ -1197,7 +1197,7 @@ function Status() {
     }
   });
   const [result, setResult] = useState(null), [error, setError] = useState(''), [loading, setLoading] = useState(false);
-  const [whatsappLink, setWhatsappLink] = useState(() => localStorage.getItem('faiz_whatsapp_group') || 'https://chat.whatsapp.com/');
+  const [whatsappLink, setWhatsappLink] = useState(() => localStorage.getItem('faiz_whatsapp_group') || 'https://chat.whatsapp.com/Ll7lo4R3C2d6PFGRIjLX4m');
 
   const doLookup = async (lookupTerm, silent = false) => {
     const term = (lookupTerm || '').toString().trim();
@@ -1746,13 +1746,13 @@ function AdminDashboard({ onLogout }) {
   const [applications, setApplications] = useState([]);
   const [settings, setSettings] = useState(() => ({
     recruitment_status: localStorage.getItem('faiz_recruitment_status') || 'open',
-    whatsapp_url: localStorage.getItem('faiz_whatsapp_group') || 'https://chat.whatsapp.com/'
+    whatsapp_url: localStorage.getItem('faiz_whatsapp_group') || 'https://chat.whatsapp.com/Ll7lo4R3C2d6PFGRIjLX4m'
   }));
   const [filter, setFilter] = useState('all');
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [whatsappInput, setWhatsappInput] = useState(() => localStorage.getItem('faiz_whatsapp_group') || 'https://chat.whatsapp.com/');
+  const [whatsappInput, setWhatsappInput] = useState(() => localStorage.getItem('faiz_whatsapp_group') || 'https://chat.whatsapp.com/Ll7lo4R3C2d6PFGRIjLX4m');
   const [saveSuccess, setSaveSuccess] = useState('');
 
   const [dbError, setDbError] = useState(null);
@@ -1791,7 +1791,7 @@ function AdminDashboard({ onLogout }) {
 
         if (config) {
           const currentStatus = localStorage.getItem('faiz_recruitment_status') || (config.recruitment_open === false ? 'closed' : 'open');
-          const groupUrl = config.whatsapp_url || localStorage.getItem('faiz_whatsapp_group') || 'https://chat.whatsapp.com/';
+          const groupUrl = config.whatsapp_url || localStorage.getItem('faiz_whatsapp_group') || 'https://chat.whatsapp.com/Ll7lo4R3C2d6PFGRIjLX4m';
           setSettings({ recruitment_status: currentStatus, whatsapp_url: groupUrl });
           setWhatsappInput(groupUrl);
         }
