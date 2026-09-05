@@ -1273,18 +1273,32 @@ function AdminDashboard({ onLogout }) {
     setLoading(true);
     try {
       if (supabase) {
-        const [{ data: apps, error: appsErr }, { data: config, error: configErr }] = await Promise.all([
-          supabase.from('applications').select('*').order('created_at', { ascending: false }),
-          supabase.from('settings').select('recruitment_open,whatsapp_url').eq('id', 1).maybeSingle()
-        ]);
+        // 1. Try secure admin RPC query
+        let appList = null;
+        let queryErr = null;
+        const { data: rpcApps, error: rpcErr } = await supabase.rpc('admin_get_applications', { admin_passcode: '1234' });
+        
+        if (!rpcErr && rpcApps) {
+          appList = rpcApps;
+        } else {
+          // Direct table query fallback
+          const { data: directApps, error: directErr } = await supabase.from('applications').select('*').order('created_at', { ascending: false });
+          if (!directErr && directApps) {
+            appList = directApps;
+          } else {
+            queryErr = rpcErr || directErr;
+          }
+        }
 
-        if (appsErr) {
-          console.error('Supabase query error:', appsErr);
-          setDbError(appsErr.message || 'Unable to connect to Supabase database tables.');
+        const { data: config } = await supabase.from('settings').select('recruitment_open,whatsapp_url').eq('id', 1).maybeSingle();
+
+        if (queryErr) {
+          console.error('Supabase query error:', queryErr);
+          setDbError(queryErr.message || 'Unable to connect to Supabase database tables.');
           setApplications([]);
         } else {
           setDbError(null);
-          setApplications(apps || []);
+          setApplications(appList || []);
         }
 
         if (config) {
@@ -1335,7 +1349,11 @@ function AdminDashboard({ onLogout }) {
     if (supabase) {
       try {
         if (status === 'selected') {
-          const { error: rpcErr } = await supabase.rpc('admin_select_application', { target_id: app.id, reviewer: 'Bhuvi' });
+          const { error: rpcErr } = await supabase.rpc('admin_select_application', { 
+            target_id: app.id, 
+            admin_passcode: '1234', 
+            reviewer: 'Bhuvi' 
+          });
           if (rpcErr) {
             const reviewed_at = new Date().toISOString();
             const reviewed_by = 'Bhuvi';
@@ -1350,7 +1368,11 @@ function AdminDashboard({ onLogout }) {
             }, { onConflict: 'uid' });
           }
         } else if (status === 'rejected') {
-          const { error: rpcErr } = await supabase.rpc('admin_reject_application', { target_id: app.id, reviewer: 'Bhuvi' });
+          const { error: rpcErr } = await supabase.rpc('admin_reject_application', { 
+            target_id: app.id, 
+            admin_passcode: '1234', 
+            reviewer: 'Bhuvi' 
+          });
           if (rpcErr) {
             const reviewed_at = new Date().toISOString();
             const reviewed_by = 'Bhuvi';
@@ -1374,7 +1396,10 @@ function AdminDashboard({ onLogout }) {
     if (!confirm(`Are you sure you want to permanently delete this application for ${app.ign} (${app.application_id})?\n\nThis will remove their record and release Free Fire UID ${app.uid} so they can submit a new application.`)) return;
     if (supabase) {
       try {
-        const { error: rpcErr } = await supabase.rpc('admin_delete_application', { target_id: app.id });
+        const { error: rpcErr } = await supabase.rpc('admin_delete_application', { 
+          target_id: app.id, 
+          admin_passcode: '1234' 
+        });
         if (rpcErr) {
           await supabase.from('applications').delete().eq('id', app.id);
           await supabase.from('members').delete().eq('uid', app.uid);
