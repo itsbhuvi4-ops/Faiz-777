@@ -1,12 +1,13 @@
 import { createClient } from '@supabase/supabase-js'
 
-const url = import.meta.env.VITE_SUPABASE_URL
-const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+const defaultUrl = 'https://mrvkmideqaeczhfxhobg.supabase.co'
+const defaultAnonKey = 'sb_publishable_g0mfcyMMdnEOeoN9_r7WNQ_dN7AhmqP'
 
-// Intentionally returns null in design/demo mode; no secrets are embedded in the client.
-export const supabase = url && anonKey ? createClient(url, anonKey) : null
+const url = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_URL) || defaultUrl
+const anonKey = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_ANON_KEY) || defaultAnonKey
 
-export const isConfigured = Boolean(supabase)
+export const supabase = createClient(url, anonKey)
+export const isConfigured = true
 
 export async function uploadWebsiteImage(file, folder) {
   if (!supabase) throw new Error('Supabase is not configured.')

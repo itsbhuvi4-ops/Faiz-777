@@ -705,8 +705,8 @@ function Status() {
   const doLookup = async (lookupTerm, silent = false) => {
     const term = (lookupTerm || '').toString().trim();
     if (!term) return;
-    if (!isConfigured) {
-      if (!silent) setError('Application lookup is unavailable until the secure backend is configured.');
+    if (!supabase) {
+      if (!silent) setError('Unable to connect to the application server. Please try again.');
       return;
     }
     if (!silent) {
@@ -722,7 +722,7 @@ function Status() {
         foundData = rpcData[0];
       }
 
-      // 2. Fallback search by application_id or Free Fire UID
+      // 2. Direct database query fallback search by application_id or Free Fire UID
       if (!foundData) {
         const { data: tableData } = await supabase
           .from('applications')
@@ -741,13 +741,13 @@ function Status() {
       } else {
         if (!silent) {
           setResult(null);
-          setError(`No application found for "${term}". Please verify your Application ID or Free Fire UID.`);
+          setError('Application not found. Please check your Application ID or Free Fire UID.');
         }
       }
     } catch (e) {
       if (!silent) {
         setResult(null);
-        setError('Failed to fetch application status. Please try again.');
+        setError('Unable to connect to the application server. Please try again.');
       }
     } finally {
       if (!silent) setLoading(false);
@@ -1239,25 +1239,38 @@ function AdminDashboard({ onLogout }) {
   const changeStatus = async (app, status) => {
     if (supabase) {
       try {
-        await supabase.from('applications').update({ status }).eq('id', app.id);
+        const reviewed_at = new Date().toISOString();
+        const reviewed_by = 'Bhuvi';
+        await supabase.from('applications').update({ status, reviewed_at, reviewed_by }).eq('id', app.id);
         if (status === 'selected') {
-          await supabase.from('members').upsert({ ign: app.ign, uid: app.uid, role: app.role, member_since: new Date().toISOString().slice(0, 10), active: true }, { onConflict: 'uid' });
+          await supabase.from('members').upsert({ 
+            application_id: app.application_id,
+            ign: app.ign, 
+            uid: app.uid, 
+            role: app.role, 
+            member_since: new Date().toISOString().slice(0, 10), 
+            active: true 
+          }, { onConflict: 'uid' });
         } else if (status === 'rejected') {
           await supabase.from('members').delete().eq('uid', app.uid);
         }
-      } catch (e) {}
+      } catch (e) {
+        console.error('Status update note:', e);
+      }
     }
     setSelected(null);
     load();
   };
 
   const remove = async app => {
-    if (!confirm(`Delete application ${app.application_id}?`)) return;
+    if (!confirm(`Are you sure you want to permanently delete this application for ${app.ign} (${app.application_id})?\n\nThis will remove their record and release Free Fire UID ${app.uid} so they can submit a new application.`)) return;
     if (supabase) {
       try {
         await supabase.from('applications').delete().eq('id', app.id);
         await supabase.from('members').delete().eq('uid', app.uid);
-      } catch (e) {}
+      } catch (e) {
+        console.error('Delete error note:', e);
+      }
     }
     // Clear local storage lock if deleted
     try {
@@ -1270,7 +1283,13 @@ function AdminDashboard({ onLogout }) {
     load();
   };
 
-  const shown = applications.filter(a => (filter === 'all' || a.status === filter) && `${a.application_id} ${a.ign} ${a.uid}`.toLowerCase().includes(query.toLowerCase()));
+  const shown = applications.filter(a => {
+    const matchesFilter = filter === 'all' || a.status === filter;
+    const loc = a.location || [a.district, a.state, a.country].filter(Boolean).join(' ');
+    const searchStr = `${a.application_id} ${a.ign} ${a.full_name || ''} ${a.uid} ${a.whatsapp || ''} ${loc}`.toLowerCase();
+    const matchesQuery = searchStr.includes(query.toLowerCase());
+    return matchesFilter && matchesQuery;
+  });
   const counts = s => applications.filter(a => a.status === s).length;
 
   return (
@@ -1339,7 +1358,7 @@ function AdminDashboard({ onLogout }) {
           </div>
         </div>
         <div className="admin-controls">
-          <input placeholder="Search ID, IGN or UID" value={query} onChange={e => setQuery(e.target.value)} />
+          <input placeholder="Search ID, IGN, Name, UID, Phone, Location" value={query} onChange={e => setQuery(e.target.value)} />
           {['all', 'pending', 'under_review', 'selected', 'rejected'].map(x => (
             <button key={x} className={filter === x ? 'active' : ''} onClick={() => setFilter(x)}>
               {x.replace('_', ' ')}
@@ -1355,7 +1374,8 @@ function AdminDashboard({ onLogout }) {
                   <th>APPLICANT</th>
                   <th>WHATSAPP NUMBER</th>
                   <th>UID & ROLE</th>
-                  <th>DATE</th>
+                  <th>LOCATION</th>
+                  <th>SUBMITTED</th>
                   <th>STATUS</th>
                   <th>QUICK ACTIONS</th>
                 </tr>
@@ -1386,6 +1406,11 @@ function AdminDashboard({ onLogout }) {
                     <td>
                       <span>{a.uid}</span>
                       <small style={{ color: 'var(--lime)', fontWeight: 'bold' }}>{a.role}</small>
+                    </td>
+                    <td>
+                      <small style={{ color: 'var(--muted)' }}>
+                        {a.location || [a.district, a.state, a.country].filter(Boolean).join(', ') || '—'}
+                      </small>
                     </td>
                     <td>{new Date(a.created_at).toLocaleDateString()}</td>
                     <td><StatusBadge status={a.status} /></td>
@@ -1437,6 +1462,7 @@ function AdminDashboard({ onLogout }) {
 
 function ApplicationDetails({ app, close, status, remove }) {
   const cleanWa = app.whatsapp ? app.whatsapp.replace(/[^0-9]/g, '') : '';
+  const loc = app.location || [app.district, app.state, app.country].filter(Boolean).join(', ') || '—';
   return (
     <motion.div className="modal-bg" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={close}>
       <motion.article className="application-modal" initial={{ y: 20 }} animate={{ y: 0 }} onClick={e => e.stopPropagation()}>
@@ -1461,15 +1487,19 @@ function ApplicationDetails({ app, close, status, remove }) {
           {[
             ['Application ID', app.application_id],
             ['Full Name', app.full_name],
+            ['In-Game Name (IGN)', app.ign],
             ['Free Fire UID', app.uid],
             ['Age', app.age],
-            ['Location', `${app.district || ''}, ${app.state || ''}, ${app.country || ''}`],
+            ['Location', loc],
             ['Role', app.role],
             ['WhatsApp Number', app.whatsapp],
             ['Instagram', app.instagram ? `@${app.instagram.replace(/^@/, '')}` : '—'],
             ['Reason to Join', app.reason],
             ['Rules agreement', app.rules_accepted ? 'Accepted' : 'Not accepted'],
-            ['Applied Date', new Date(app.created_at).toLocaleString()]
+            ['Submitted Date', new Date(app.created_at).toLocaleString()],
+            ['Current Status', app.status?.toUpperCase()?.replace('_', ' ')],
+            ['Review Date', app.reviewed_at ? new Date(app.reviewed_at).toLocaleString() : 'Pending review'],
+            ['Reviewed By', app.reviewed_by || (app.status === 'pending' ? 'Pending' : 'Admin Bhuvi')]
           ].map(([a, b]) => (
             <React.Fragment key={a}>
               <dt>{a}</dt>
