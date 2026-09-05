@@ -1,19 +1,12 @@
--- FAIZ 777 Recruitment & Member Sync Schema
--- Run this in your Supabase Project SQL Editor (https://app.supabase.com)
+-- ========================================================
+-- FAIZ 777 — COMPLETE DATABASE SETUP SCHEMA
+-- Copy and run this ENTIRE script in your Supabase SQL Editor:
+-- https://supabase.com/dashboard/project/mrvkmideqaeczhfxhobg/sql/new
+-- ========================================================
 
 create extension if not exists pgcrypto;
 
--- 1. Admin Users
-create table if not exists public.admin_users (
-  user_id uuid primary key references auth.users(id) on delete cascade,
-  username text not null default 'Bhuvi',
-  active boolean not null default true,
-  created_at timestamptz not null default now()
-);
-alter table public.admin_users add column if not exists username text not null default 'Bhuvi';
-alter table public.admin_users add column if not exists active boolean not null default true;
-
--- 2. Applications Table
+-- 1. Applications Table
 create table if not exists public.applications (
   id uuid primary key default gen_random_uuid(),
   application_id text not null unique,
@@ -37,7 +30,7 @@ create table if not exists public.applications (
   updated_at timestamptz not null default now()
 );
 
--- Ensure columns exist if table was already created previously
+-- Ensure all columns exist
 alter table public.applications add column if not exists location text;
 alter table public.applications add column if not exists state text;
 alter table public.applications add column if not exists district text;
@@ -47,7 +40,7 @@ alter table public.applications add column if not exists rules_accepted boolean 
 alter table public.applications add column if not exists reviewed_at timestamptz;
 alter table public.applications add column if not exists reviewed_by text;
 
--- 3. Official Members / Guild Roster
+-- 2. Official Members Roster Table
 create table if not exists public.members (
   id uuid primary key default gen_random_uuid(),
   application_id text,
@@ -63,7 +56,7 @@ create table if not exists public.members (
 alter table public.members add column if not exists application_id text;
 alter table public.members add column if not exists active boolean not null default true;
 
--- 4. Settings Table
+-- 3. Settings Table
 create table if not exists public.settings (
   id smallint primary key default 1 check (id=1),
   recruitment_open boolean not null default true,
@@ -82,14 +75,47 @@ alter table public.settings add column if not exists recruitment_status text not
 alter table public.settings add column if not exists whatsapp_url text default 'https://chat.whatsapp.com/';
 insert into public.settings(id) values (1) on conflict (id) do nothing;
 
--- 5. Helper Functions & Triggers
-create or replace function public.is_admin()
-returns boolean language sql stable security definer set search_path = public
-as $$ 
-  select exists(select 1 from public.admin_users where user_id = auth.uid() and active) 
-  or (auth.jwt() ->> 'email' = 'faiz777admin@gmail.com')
-$$;
+-- 4. Room Matches & Leaderboard Tables
+create table if not exists public.matches (
+  id uuid primary key default gen_random_uuid(),
+  title text not null default 'FAIZ 777 Room Match',
+  scheduled_at timestamptz not null,
+  status text not null default 'open' check (status in ('open', 'conducted', 'cancelled')),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
 
+create table if not exists public.match_registrations (
+  id uuid primary key default gen_random_uuid(),
+  match_id uuid not null references public.matches(id) on delete cascade,
+  application_id uuid not null references public.applications(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  unique (match_id, application_id)
+);
+
+create table if not exists public.match_results (
+  id uuid primary key default gen_random_uuid(),
+  match_id uuid not null references public.matches(id) on delete cascade,
+  application_id uuid not null references public.applications(id) on delete cascade,
+  ign text not null,
+  position smallint check (position > 0),
+  kills smallint not null default 0 check (kills >= 0),
+  points integer not null default 0 check (points >= 0),
+  is_winner boolean not null default false,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (match_id, application_id)
+);
+
+-- 5. Admin Users Table
+create table if not exists public.admin_users (
+  user_id uuid primary key default gen_random_uuid(),
+  username text not null default 'Bhuvi',
+  active boolean not null default true,
+  created_at timestamptz not null default now()
+);
+
+-- 6. Helper Functions & Triggers
 create or replace function public.touch_updated_at()
 returns trigger language plpgsql as $$ 
 begin 
@@ -103,7 +129,7 @@ create trigger applications_touch before update on public.applications for each 
 drop trigger if exists members_touch on public.members;
 create trigger members_touch before update on public.members for each row execute function public.touch_updated_at();
 
--- 6. RPC: submit_application
+-- 7. RPC: submit_application
 create or replace function public.submit_application(payload jsonb)
 returns table(application_id text) language plpgsql security definer set search_path=public as $$
 declare 
@@ -153,7 +179,7 @@ begin
   return query select generated_id;
 end $$;
 
--- 7. RPC: get_application_status (Non-sensitive public status lookup by Application ID or UID)
+-- 8. RPC: get_application_status
 create or replace function public.get_application_status(lookup_id text)
 returns table(
   application_id text, 
@@ -180,7 +206,7 @@ returns table(
   limit 1;
 $$;
 
--- 8. RPC: admin_select_application (Server-side selection & roster sync)
+-- 9. RPC: admin_select_application
 create or replace function public.admin_select_application(target_id uuid, reviewer text default 'Bhuvi')
 returns jsonb language plpgsql security definer set search_path=public as $$
 declare
@@ -191,14 +217,12 @@ begin
     raise exception 'Application not found';
   end if;
 
-  -- 1. Update application status
   update public.applications 
   set status = 'selected', 
       reviewed_at = now(), 
       reviewed_by = reviewer 
   where id = target_id;
 
-  -- 2. Upsert into official members roster
   insert into public.members (application_id, ign, uid, role, active, member_since)
   values (app.application_id, app.ign, app.uid, app.role, true, current_date)
   on conflict (uid) do update 
@@ -210,7 +234,7 @@ begin
   return jsonb_build_object('success', true, 'status', 'selected', 'application_id', app.application_id);
 end $$;
 
--- 9. RPC: admin_reject_application
+-- 10. RPC: admin_reject_application
 create or replace function public.admin_reject_application(target_id uuid, reviewer text default 'Bhuvi')
 returns jsonb language plpgsql security definer set search_path=public as $$
 declare
@@ -221,20 +245,18 @@ begin
     raise exception 'Application not found';
   end if;
 
-  -- 1. Update status
   update public.applications 
   set status = 'rejected', 
       reviewed_at = now(), 
       reviewed_by = reviewer 
   where id = target_id;
 
-  -- 2. Remove from active roster if previously selected
   delete from public.members where uid = app.uid;
 
   return jsonb_build_object('success', true, 'status', 'rejected', 'application_id', app.application_id);
 end $$;
 
--- 10. RPC: admin_delete_application
+-- 11. RPC: admin_delete_application
 create or replace function public.admin_delete_application(target_id uuid)
 returns jsonb language plpgsql security definer set search_path=public as $$
 declare
@@ -245,47 +267,40 @@ begin
     raise exception 'Application not found';
   end if;
 
-  -- 1. Remove from members
   delete from public.members where uid = app.uid;
-
-  -- 2. Delete application (releases the UID for new submissions)
   delete from public.applications where id = target_id;
 
   return jsonb_build_object('success', true, 'deleted_id', app.application_id);
 end $$;
 
+-- 12. Permissions & Row Level Security (RLS)
 grant execute on function public.submit_application(jsonb) to anon, authenticated;
 grant execute on function public.get_application_status(text) to anon, authenticated;
 grant execute on function public.admin_select_application(uuid, text) to anon, authenticated;
 grant execute on function public.admin_reject_application(uuid, text) to anon, authenticated;
 grant execute on function public.admin_delete_application(uuid) to anon, authenticated;
 
--- 11. Row Level Security (RLS)
-alter table public.admin_users enable row level security;
 alter table public.applications enable row level security;
 alter table public.members enable row level security;
 alter table public.settings enable row level security;
+alter table public.matches enable row level security;
+alter table public.match_registrations enable row level security;
+alter table public.match_results enable row level security;
 
--- Policies for applications
+-- Drop old policies if any
+drop policy if exists "allow all applications" on public.applications;
 drop policy if exists "public insert applications" on public.applications;
-create policy "public insert applications" on public.applications for insert to anon, authenticated with check (true);
+drop policy if exists "public select applications" on public.applications;
+drop policy if exists "allow all members" on public.members;
+drop policy if exists "allow all settings" on public.settings;
+drop policy if exists "allow all matches" on public.matches;
+drop policy if exists "allow all match_registrations" on public.match_registrations;
+drop policy if exists "allow all match_results" on public.match_results;
 
-drop policy if exists "public select non sensitive applications" on public.applications;
-create policy "public select non sensitive applications" on public.applications for select using (true);
-
-drop policy if exists "admin full access applications" on public.applications;
-create policy "admin full access applications" on public.applications for all using (true) with check (true);
-
--- Policies for members
-drop policy if exists "public active members" on public.members;
-create policy "public active members" on public.members for select using (active = true);
-
-drop policy if exists "admin manage members" on public.members;
-create policy "admin manage members" on public.members for all using (true) with check (true);
-
--- Policies for settings
-drop policy if exists "public settings" on public.settings;
-create policy "public settings" on public.settings for select using (true);
-
-drop policy if exists "admin manage settings" on public.settings;
-create policy "admin manage settings" on public.settings for all using (true) with check (true);
+-- Create clean open policies for project web app
+create policy "allow all applications" on public.applications for all to anon, authenticated using (true) with check (true);
+create policy "allow all members" on public.members for all to anon, authenticated using (true) with check (true);
+create policy "allow all settings" on public.settings for all to anon, authenticated using (true) with check (true);
+create policy "allow all matches" on public.matches for all to anon, authenticated using (true) with check (true);
+create policy "allow all match_registrations" on public.match_registrations for all to anon, authenticated using (true) with check (true);
+create policy "allow all match_results" on public.match_results for all to anon, authenticated using (true) with check (true);

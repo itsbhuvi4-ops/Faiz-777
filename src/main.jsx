@@ -426,19 +426,22 @@ function Recruitment() {
 
     if (supabase) {
       try {
-        // 1. Attempt secure RPC submission
+        // 1. Attempt secure RPC submission first
         const { data: rpcData, error: rpcErr } = await supabase.rpc('submit_application', { payload: cleanForm });
         
-        if (rpcErr) {
-          if (rpcErr.message?.includes('duplicate') || rpcErr.code === '23505') {
-            setLoading(false);
-            return setError('This Free Fire UID has already submitted an application. Each player can register only once.');
+        if (!rpcErr && rpcData) {
+          generatedAppId = rpcData?.application_id || rpcData?.[0]?.application_id || (typeof rpcData === 'string' ? rpcData : null);
+        } else {
+          if (rpcErr) {
+            if (rpcErr.message?.includes('duplicate') || rpcErr.code === '23505') {
+              setLoading(false);
+              return setError('This Free Fire UID has already submitted an application. Each player can register only once.');
+            }
+            if (rpcErr.message?.includes('closed')) {
+              setLoading(false);
+              return setError('Recruitment is currently closed.');
+            }
           }
-          if (rpcErr.message?.includes('closed')) {
-            setLoading(false);
-            return setError('Recruitment is currently closed.');
-          }
-          console.warn('RPC notice, trying direct insert fallback:', rpcErr);
 
           // 2. Direct table insert fallback
           const autoId = `FAIZ-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -448,6 +451,7 @@ function Recruitment() {
             ign: cleanForm.ign,
             uid: cleanForm.uid,
             age: cleanForm.age,
+            location: `${cleanForm.district}, ${cleanForm.state}, ${cleanForm.country}`,
             state: cleanForm.state,
             district: cleanForm.district,
             country: cleanForm.country,
@@ -465,26 +469,18 @@ function Recruitment() {
               return setError('This Free Fire UID has already submitted an application. Each player can register only once.');
             }
             if (insErr.message?.includes('schema cache') || insErr.message?.includes('does not exist')) {
-              console.warn('Supabase table not found in schema cache. Storing locally as fallback.');
-              generatedAppId = autoId;
-            } else {
-              throw insErr;
+              setLoading(false);
+              return setError('Supabase database table "applications" is not created yet. Run "supabase/schema.sql" in your Supabase SQL Editor (https://app.supabase.com).');
             }
+            throw insErr;
           } else {
             generatedAppId = insData?.application_id || autoId;
           }
-        } else {
-          generatedAppId = rpcData?.application_id || rpcData?.[0]?.application_id || (typeof rpcData === 'string' ? rpcData : null);
         }
       } catch (err) {
-        if (err.message?.includes('schema cache') || err.message?.includes('does not exist')) {
-          console.warn('Supabase table not found in schema cache, generating local registration ID.');
-          generatedAppId = `FAIZ-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
-        } else {
-          console.error('Submission failed:', err);
-          setLoading(false);
-          return setError(err.message || 'We could not submit your application. Please check your details and try again.');
-        }
+        console.error('Submission failed:', err);
+        setLoading(false);
+        return setError(err.message || 'We could not submit your application to the database. Please try again.');
       }
     }
 
@@ -1184,15 +1180,26 @@ function AdminDashboard({ onLogout }) {
   const [whatsappInput, setWhatsappInput] = useState(() => localStorage.getItem('faiz_whatsapp_group') || 'https://chat.whatsapp.com/');
   const [saveSuccess, setSaveSuccess] = useState('');
 
+  const [dbError, setDbError] = useState(null);
+
   const load = async () => {
     setLoading(true);
     try {
       if (supabase) {
-        const [{ data: apps }, { data: config }] = await Promise.all([
+        const [{ data: apps, error: appsErr }, { data: config, error: configErr }] = await Promise.all([
           supabase.from('applications').select('*').order('created_at', { ascending: false }),
           supabase.from('settings').select('recruitment_open,whatsapp_url').eq('id', 1).maybeSingle()
         ]);
-        setApplications(apps || []);
+
+        if (appsErr) {
+          console.error('Supabase query error:', appsErr);
+          setDbError(appsErr.message || 'Unable to connect to Supabase database tables.');
+          setApplications([]);
+        } else {
+          setDbError(null);
+          setApplications(apps || []);
+        }
+
         if (config) {
           const currentStatus = localStorage.getItem('faiz_recruitment_status') || (config.recruitment_open === false ? 'closed' : 'open');
           const groupUrl = config.whatsapp_url || localStorage.getItem('faiz_whatsapp_group') || 'https://chat.whatsapp.com/';
@@ -1201,7 +1208,8 @@ function AdminDashboard({ onLogout }) {
         }
       }
     } catch (e) {
-      console.error(e);
+      console.error('Admin load error:', e);
+      setDbError(e.message || 'Database query failed');
     } finally {
       setLoading(false);
     }
@@ -1290,7 +1298,7 @@ function AdminDashboard({ onLogout }) {
     const matchesQuery = searchStr.includes(query.toLowerCase());
     return matchesFilter && matchesQuery;
   });
-  const counts = s => applications.filter(a => a.status === s).length;
+  const counts = s => applications.filter(a => s === 'under_review' ? (a.status === 'pending' || a.status === 'under_review') : a.status === s).length;
 
   return (
     <main className="admin-dashboard">
@@ -1304,8 +1312,32 @@ function AdminDashboard({ onLogout }) {
       <section>
         <p className="eyebrow">FAIZ 777 / ADMIN</p>
         <h1>COMMAND <em>DECK.</em></h1>
+
+        {dbError && (
+          <div style={{ background: '#2b1614', border: '1px solid #772b25', padding: '22px', margin: '0 0 30px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#ff8c80', fontWeight: 800, fontSize: '15px' }}>
+              <ShieldCheck size={20} /> SUPABASE DATABASE SETUP REQUIRED
+            </div>
+            <p style={{ color: '#ffd6d2', fontSize: '13px', margin: '10px 0 14px', lineHeight: '1.6' }}>
+              Database notice: <code>{dbError}</code>.<br />
+              Please execute the complete SQL schema script (<code>supabase/schema.sql</code>) in your Supabase project SQL Editor to enable live recruitment persistence.
+            </p>
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+              <a 
+                className="btn lime" 
+                href="https://supabase.com/dashboard/project/mrvkmideqaeczhfxhobg/sql/new" 
+                target="_blank" 
+                rel="noreferrer"
+              >
+                OPEN SUPABASE SQL EDITOR <ExternalLink size={14} />
+              </a>
+              <button className="btn outline" onClick={() => load()}>RETRY DATABASE QUERY</button>
+            </div>
+          </div>
+        )}
+
         <div className="admin-stats">
-          {[['TOTAL APPLICATIONS', applications.length], ['PENDING', counts('pending')], ['UNDER REVIEW', counts('under_review')], ['SELECTED', counts('selected')], ['REJECTED', counts('rejected')]].map(([name, number]) => (
+          {[['TOTAL APPLICATIONS', applications.length], ['UNDER REVIEW', counts('under_review')], ['SELECTED', counts('selected')], ['REJECTED', counts('rejected')]].map(([name, number]) => (
             <article key={name}>
               <strong>{number}</strong>
               <span>{name}</span>
