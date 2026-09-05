@@ -4,3 +4,80 @@
 @media(max-width:650px){.navbar{height:65px;padding:0 5vw}.navlinks{display:none;position:absolute;top:64px;left:0;right:0;background:#0c0f0b;border-bottom:1px solid var(--line);padding:12px 5vw}.navlinks.open{display:flex;flex-direction:column}.navlinks a{padding:10px 0}.menu{display:block}.admin{display:none}.hero{min-height:790px;padding:360px 7vw 80px;align-items:start}.hero-art{inset:65px 0 auto;height:365px;background:linear-gradient(0deg,var(--ink),transparent 60%),url('/faiz-logo.jpg') center/cover no-repeat}.hero-copy{width:100%}.hero h1{font-size:27vw}.hero-role{line-height:1.8}.live-card{right:7vw;bottom:35px;padding:13px;min-width:180px}.scroll{display:none}.recruit-cta{margin-top:28px;flex-direction:column;align-items:start;gap:9px}.home-cards,.rules-grid,.match-layout{grid-template-columns:1fr}.intro-section,.content{padding:70px 6vw}.page-hero{padding:125px 6vw 55px}.form-wrap,.status-wrap{padding:50px 5vw 75px}.steps{overflow:auto;gap:15px;justify-content:start}.steps>div{white-space:nowrap}.recruitment-form{padding:24px 18px}.form-grid{grid-template-columns:1fr}.status-form{grid-template-columns:1fr}.member-toolbar{display:block}.member-toolbar>div{display:flex;overflow:auto;margin-bottom:18px}.member-toolbar label{width:100%}.member-toolbar input{width:100%}.member-grid{grid-template-columns:1fr 1fr}.member-card{padding:16px}.member-card h2{font-size:17px}.member-card .badge{top:12px;right:12px;font-size:8px}.match-rules{font-size:10px}footer{grid-template-columns:1fr;padding:35px 6vw}.admin-login form{padding:28px 22px}.admin-dashboard>section{padding:45px 5vw}.admin-stats{grid-template-columns:1fr 1fr}.admin-panel-head{display:block;margin-top:40px}.toggle{margin-top:15px}.application-modal{padding:27px 20px}.application-modal dl{grid-template-columns:1fr}.application-modal dd{text-align:left}.modal-actions .delete{margin-left:0;width:100%;text-align:left;margin-top:10px}.success{padding:130px 7vw 70px}.application-id{gap:9px;flex-wrap:wrap}.application-id strong{font-size:15px}.application-id button{margin-left:auto}}
 /* Room-match scheduling and leaderboard */
 .leaderboard-section{padding:90px 8vw;max-width:1500px;margin:auto;border-top:1px solid var(--line)}.leaderboard-title{display:flex;justify-content:space-between;align-items:end;margin-bottom:28px}.leaderboard-title h2{font:700 clamp(34px,4.5vw,62px)/.95 Syne;letter-spacing:-.07em;margin:0}.leaderboard-title p{color:var(--muted);font-size:13px}.leaderboard-title>svg{width:44px;height:44px;color:var(--lime)}.leaderboard-list{border:1px solid var(--line)}.leaderboard-list article{display:grid;grid-template-columns:90px 1fr auto 105px;gap:16px;align-items:center;padding:18px 22px;border-bottom:1px solid var(--line);background:var(--panel)}.leaderboard-list article:last-child{border-bottom:0}.leaderboard-list article.winner{background:#d9ff3610}.leaderboard-list strong{font:700 24px Syne;color:var(--lime)}.leaderboard-list span{font:700 17px Syne}.leaderboard-list small{font:9px 'DM Mono';color:var(--lime);margin-left:8px}.leaderboard-list b{font:11px 'DM Mono';color:var(--lime)}.leaderboard-list i{font:10px 'DM Mono';font-style:normal;color:var(--muted)}.match-admin{border-top:1px solid var(--line);margin-top:70px;padding-top:1px}.match-schedule{display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end;border:1px solid var(--line);padding:18px;background:var(--panel)}.match-schedule .btn{height:46px}.match-admin-grid{display:grid;grid-template-columns:minmax(220px,.7fr) 1.3fr;gap:15px;margin-top:30px}.match-choice{width:100%;text-align:left;background:var(--panel);border:1px solid var(--line);padding:15px;color:var(--text);margin-bottom:8px}.match-choice.active{border-color:var(--lime)}.match-choice b,.match-choice span{display:block}.match-choice b{font:700 16px Syne}.match-choice span,.result-editor span{font:9px 'DM Mono';color:var(--muted);margin-top:5px}.match-status{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid var(--line);padding:14px}.match-status strong{font:700 17px Syne}.registration-picker{margin-top:10px;border:1px solid var(--line);max-height:310px;overflow:auto}.registration-picker button{background:var(--panel);border:0;border-bottom:1px solid var(--line);color:var(--text);padding:12px;width:100%;text-align:left;display:flex;justify-content:space-between}.registration-picker button:disabled{opacity:.45}.registration-picker span{font:9px 'DM Mono';color:var(--lime)}.result-board{margin-top:28px}.result-editor{display:grid;grid-template-columns:minmax(130px,1fr) 80px 80px 90px 80px auto auto;gap:9px;align-items:end;border:1px solid var(--line);border-bottom:0;padding:13px;background:var(--panel)}.result-editor:last-child{border-bottom:1px solid var(--line)}.result-editor input{padding:9px;margin-top:5px}.result-editor label{font-size:8px}.winner-check{display:flex;align-items:center;gap:5px;height:43px}.winner-check input{width:auto;margin:0}.result-editor .view,.result-editor .delete{padding-bottom:11px}
+
+/* WhatsApp & Recruitment Status Controls */
+.btn.whatsapp{background:#25D366;color:#080a08;border-color:#25D366;font-weight:800}
+.btn.whatsapp:hover{background:#1eb954;border-color:#1eb954;color:#000}
+.whatsapp-box{margin:30px 0 15px;border:1px solid #25d36660;background:linear-gradient(135deg,#0d2214,#080a08);padding:24px;width:min(520px,100%)}
+.whatsapp-box h3{font:700 18px Syne;color:#25D366;margin:0 0 8px;display:flex;align-items:center;gap:8px}
+.whatsapp-box p{color:var(--muted);font-size:13px;line-height:1.6;margin:0 0 18px}
+.status-switcher{display:inline-flex;border:1px solid var(--line);background:var(--panel);padding:4px;gap:4px;flex-wrap:wrap}
+.status-switcher button{border:0;background:transparent;padding:8px 14px;font:700 10px 'DM Mono';letter-spacing:.06em;color:var(--muted);transition:.2s}
+.status-switcher button.active.status-open{background:#1a2912;color:var(--lime);border:1px solid #557522}
+.status-switcher button.active.status-closed{background:#2b1412;color:#ff8c80;border:1px solid #772b25}
+.status-switcher button.active.status-coming_soon{background:#2e2610;color:#ffd24c;border:1px solid #7a631e}
+.admin-settings-card{border:1px solid var(--line);background:var(--panel);padding:22px;margin:25px 0;display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:768px){.admin-settings-card{grid-template-columns:1fr}}
+.recruitment-banner{border:1px solid var(--line);background:var(--panel);padding:45px 30px;text-align:center;max-width:680px;margin:0 auto}
+.recruitment-banner h2{font:700 32px Syne;margin:15px 0 10px}
+.recruitment-banner p{color:var(--muted);font-size:14px;line-height:1.7;max-width:480px;margin:0 auto 25px}
+
+/* Home Personal Registered Applicant Banner */
+.home-applicant-banner{padding:0 8vw 40px;max-width:1500px;margin:0 auto}
+.applicant-banner-card{border:1px solid #d9ff3655;background:linear-gradient(135deg,#131a0e,#0b0e09);padding:24px 30px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
+.applicant-banner-info h2{font:700 24px Syne;margin:6px 0 4px;color:var(--text)}
+.applicant-banner-info p{color:var(--muted);font-size:12px;margin:0}
+.applicant-banner-info b{color:var(--lime)}
+.applicant-banner-status{display:flex;align-items:center;gap:15px;flex-wrap:wrap}
+.applicant-banner-status small{display:block;font:9px 'DM Mono';color:var(--muted);margin-bottom:4px}
+
+/* Live Selected Recruits Section on Main Page */
+.selected-recruits-section{padding:90px 8vw;max-width:1500px;margin:auto;border-top:1px solid var(--line)}
+.section-head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:35px;flex-wrap:wrap;gap:20px}
+.live-pill{display:inline-flex;align-items:center;gap:7px;background:#172412;border:1px solid #3c5e26;color:var(--lime);font:700 10px 'DM Mono';padding:4px 10px;margin-bottom:12px}
+.pulse-dot{width:7px;height:7px;border-radius:50%;background:var(--lime);box-shadow:0 0 8px var(--lime);animation:pulse 1.8s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.8)}}
+.section-title{font:700 clamp(34px,4.5vw,62px)/.95 Syne;letter-spacing:-.07em;margin:0 0 10px}
+.section-desc{color:var(--muted);font-size:13px;max-width:520px;margin:0;line-height:1.6}
+.selected-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.selected-card{border:1px solid var(--line);background:linear-gradient(180deg,#131611,#0d100c);padding:24px;position:relative;transition:border-color .2s,transform .2s}
+.selected-card:hover{border-color:var(--lime);transform:translateY(-3px)}
+.selected-card-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.role-tag{font:700 9px 'DM Mono';color:var(--muted);background:#181d16;padding:4px 8px;border:1px solid var(--line)}
+.selected-avatar{width:50px;height:50px;display:grid;place-items:center;background:#202914;color:var(--lime);font:800 22px Syne;margin-bottom:14px;border:1px solid #3d4a22}
+.selected-card h3{font:700 19px Syne;margin:0 0 4px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.uid-text{font:10px 'DM Mono';color:var(--muted);margin:0 0 18px}
+.selected-footer{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line);padding-top:12px;font:9px 'DM Mono'}
+.selected-footer small{color:var(--muted)}
+.status-indicator{color:var(--lime);font-weight:700}
+
+/* Admin Application Table & Quick Actions */
+.admin-app-table td{vertical-align:middle;padding:12px 14px}
+.table-wa-link{display:inline-flex;align-items:center;gap:5px;color:#25d366;font:11px 'DM Mono';font-weight:700;background:#0d2014;padding:5px 9px;border:1px solid #1c4a2a;transition:.2s}
+.table-wa-link:hover{background:#163821;color:#5cff95}
+.quick-actions-bar{display:flex;gap:6px;align-items:center;flex-wrap:nowrap}
+.btn-action{border:0;font:700 9px 'DM Mono';padding:6px 9px;display:inline-flex;align-items:center;gap:4px;cursor:pointer;transition:.15s;white-space:nowrap}
+.btn-action.select{background:#233b14;color:#d9ff36;border:1px solid #4a7522}
+.btn-action.select:hover{background:#365a1e;color:#fff}
+.btn-action.reject{background:#381614;color:#ff8c80;border:1px solid #6b241e}
+.btn-action.reject:hover{background:#541d18;color:#fff}
+.btn-action.view-btn{background:#171d15;color:#a8ada4;border:1px solid #2f382a}
+.btn-action.view-btn:hover{color:var(--lime);border-color:var(--lime)}
+.btn-action.delete-btn{background:#241918;color:#ff978b;border:1px solid #4d2320}
+.btn-action.delete-btn:hover{background:#451c18;color:#fff}
+
+@media(max-width:1050px){
+  .selected-grid{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:650px){
+  .home-applicant-banner{padding:0 5vw 30px}
+  .applicant-banner-card{flex-direction:column;align-items:flex-start}
+  .applicant-banner-status{width:100%;flex-direction:column;align-items:stretch}
+  .applicant-banner-status .btn{width:100%}
+  .selected-recruits-section{padding:60px 6vw}
+  .selected-grid{grid-template-columns:1fr}
+  .section-head{flex-direction:column;align-items:flex-start}
+  .quick-actions-bar{flex-direction:column;align-items:stretch}
+  .btn-action{padding:8px 10px;justify-content:center}
+}
+
