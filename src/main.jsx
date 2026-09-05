@@ -470,7 +470,7 @@ function Recruitment() {
             }
             if (insErr.message?.includes('schema cache') || insErr.message?.includes('does not exist')) {
               setLoading(false);
-              return setError('Supabase database table "applications" is not created yet. Run "supabase/schema.sql" in your Supabase SQL Editor (https://app.supabase.com).');
+              return setError('Supabase database table "applications" is not created yet. Please execute "supabase/schema.sql" in your Supabase SQL Editor.');
             }
             throw insErr;
           } else {
@@ -485,7 +485,8 @@ function Recruitment() {
     }
 
     if (!generatedAppId) {
-      generatedAppId = `FAIZ-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+      setLoading(false);
+      return setError('Database operation failed to record your application. Please verify your Supabase database setup.');
     }
 
     const regData = {
@@ -1247,20 +1248,33 @@ function AdminDashboard({ onLogout }) {
   const changeStatus = async (app, status) => {
     if (supabase) {
       try {
-        const reviewed_at = new Date().toISOString();
-        const reviewed_by = 'Bhuvi';
-        await supabase.from('applications').update({ status, reviewed_at, reviewed_by }).eq('id', app.id);
         if (status === 'selected') {
-          await supabase.from('members').upsert({ 
-            application_id: app.application_id,
-            ign: app.ign, 
-            uid: app.uid, 
-            role: app.role, 
-            member_since: new Date().toISOString().slice(0, 10), 
-            active: true 
-          }, { onConflict: 'uid' });
+          const { error: rpcErr } = await supabase.rpc('admin_select_application', { target_id: app.id, reviewer: 'Bhuvi' });
+          if (rpcErr) {
+            const reviewed_at = new Date().toISOString();
+            const reviewed_by = 'Bhuvi';
+            await supabase.from('applications').update({ status, reviewed_at, reviewed_by }).eq('id', app.id);
+            await supabase.from('members').upsert({ 
+              application_id: app.application_id,
+              ign: app.ign, 
+              uid: app.uid, 
+              role: app.role, 
+              member_since: new Date().toISOString().slice(0, 10), 
+              active: true 
+            }, { onConflict: 'uid' });
+          }
         } else if (status === 'rejected') {
-          await supabase.from('members').delete().eq('uid', app.uid);
+          const { error: rpcErr } = await supabase.rpc('admin_reject_application', { target_id: app.id, reviewer: 'Bhuvi' });
+          if (rpcErr) {
+            const reviewed_at = new Date().toISOString();
+            const reviewed_by = 'Bhuvi';
+            await supabase.from('applications').update({ status, reviewed_at, reviewed_by }).eq('id', app.id);
+            await supabase.from('members').delete().eq('uid', app.uid);
+          }
+        } else {
+          const reviewed_at = new Date().toISOString();
+          const reviewed_by = 'Bhuvi';
+          await supabase.from('applications').update({ status, reviewed_at, reviewed_by }).eq('id', app.id);
         }
       } catch (e) {
         console.error('Status update note:', e);
@@ -1274,8 +1288,11 @@ function AdminDashboard({ onLogout }) {
     if (!confirm(`Are you sure you want to permanently delete this application for ${app.ign} (${app.application_id})?\n\nThis will remove their record and release Free Fire UID ${app.uid} so they can submit a new application.`)) return;
     if (supabase) {
       try {
-        await supabase.from('applications').delete().eq('id', app.id);
-        await supabase.from('members').delete().eq('uid', app.uid);
+        const { error: rpcErr } = await supabase.rpc('admin_delete_application', { target_id: app.id });
+        if (rpcErr) {
+          await supabase.from('applications').delete().eq('id', app.id);
+          await supabase.from('members').delete().eq('uid', app.uid);
+        }
       } catch (e) {
         console.error('Delete error note:', e);
       }
@@ -1298,7 +1315,12 @@ function AdminDashboard({ onLogout }) {
     const matchesQuery = searchStr.includes(query.toLowerCase());
     return matchesFilter && matchesQuery;
   });
-  const counts = s => applications.filter(a => s === 'under_review' ? (a.status === 'pending' || a.status === 'under_review') : a.status === s).length;
+
+  const countTotal = applications.length;
+  const countPending = applications.filter(a => a.status === 'pending').length;
+  const countUnderReview = applications.filter(a => a.status === 'under_review').length;
+  const countSelected = applications.filter(a => a.status === 'selected').length;
+  const countRejected = applications.filter(a => a.status === 'rejected').length;
 
   return (
     <main className="admin-dashboard">
@@ -1319,7 +1341,7 @@ function AdminDashboard({ onLogout }) {
               <ShieldCheck size={20} /> SUPABASE DATABASE SETUP REQUIRED
             </div>
             <p style={{ color: '#ffd6d2', fontSize: '13px', margin: '10px 0 14px', lineHeight: '1.6' }}>
-              Database notice: <code>{dbError}</code>.<br />
+              Database query error: <code>{dbError}</code>.<br />
               Please execute the complete SQL schema script (<code>supabase/schema.sql</code>) in your Supabase project SQL Editor to enable live recruitment persistence.
             </p>
             <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
@@ -1337,7 +1359,13 @@ function AdminDashboard({ onLogout }) {
         )}
 
         <div className="admin-stats">
-          {[['TOTAL APPLICATIONS', applications.length], ['UNDER REVIEW', counts('under_review')], ['SELECTED', counts('selected')], ['REJECTED', counts('rejected')]].map(([name, number]) => (
+          {[
+            ['TOTAL APPLICATIONS', countTotal],
+            ['PENDING', countPending],
+            ['UNDER REVIEW', countUnderReview],
+            ['SELECTED', countSelected],
+            ['REJECTED', countRejected]
+          ].map(([name, number]) => (
             <article key={name}>
               <strong>{number}</strong>
               <span>{name}</span>
