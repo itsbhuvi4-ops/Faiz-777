@@ -6,7 +6,8 @@ import { ArrowRight, Check, ChevronLeft, Copy, ExternalLink, Flame, LoaderCircle
 import { isConfigured, supabase } from './lib/supabase'
 import './style.css'
 
-const YOUTUBE = 'https://chat.whatsapp.com/Ll7lo4R3C2d6PFGRIjLX4m'
+const YOUTUBE = 'https://youtube.com/@faiz777gaming-n8i?si=N9m_EyhmE0DztDAL'
+const WHATSAPP_CHANNEL = 'https://chat.whatsapp.com/Ll7lo4R3C2d6PFGRIjLX4m'
 const roles = ['Rusher', 'Sniper', 'Support', 'IGL']
 const matchRules = ['𝗡𝗢 𝗥𝗢𝗢𝗙', '𝗡𝗢 𝗣𝗔𝗡𝗘𝗟', '𝗡𝗢 𝗪𝗔𝗟𝗟 𝗕𝗥𝗘𝗔𝗞', '𝗡𝗢 𝗧𝗘𝗔𝗠 𝗨𝗣', '𝗢𝗡𝗟𝗬 𝗙𝗔𝗖𝗘 𝗧𝗢 𝗙𝗔𝗖𝗘', '𝗡𝗢 𝗪𝗔𝗟𝗟 𝗕𝗥𝗘𝗔𝗞', '𝗡𝗢 𝗭𝗢𝗡𝗘 𝗕𝗥𝗘𝗔𝗞']
 const blankForm = { full_name: '', ign: '', uid: '', age: '', state: '', district: '', country: '', role: '', whatsapp: '', instagram: '', reason: '', rules_accepted: false }
@@ -784,7 +785,7 @@ function Matches() {
           </div>
           <div>
             <span>DATE</span>
-            <strong>{time ? time.toLocaleDateString(undefined, { day: '2-digit', month: '2-digit', year: 'numeric' }) : '05.09.2026'}</strong>
+            <strong>06.09.2026</strong>
           </div>
           <div>
             <span>TIME</span>
@@ -1018,12 +1019,12 @@ function Recruitment() {
           </div>
           <StatusBadge status="PENDING REVIEW" />
 
-          {/* Exclusive WhatsApp Group for Registered Applicant */}
+          {/* Exclusive WhatsApp Channel / Community Section */}
           <div className="whatsapp-box">
-            <h3><MessageCircle size={20} /> REGISTERED APPLICANT WHATSAPP GROUP</h3>
-            <p>Welcome to the roster! Room Match ID, Password, and match slot assignments are shared only in this WhatsApp group.</p>
-            <a className="btn whatsapp" href={whatsappLink} target="_blank" rel="noreferrer" style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
-              <MessageCircle size={18} /> JOIN WHATSAPP GROUP NOW <ExternalLink size={15} />
+            <h3><MessageCircle size={20} /> JOIN OUR OFFICIAL WHATSAPP CHANNEL</h3>
+            <p>Welcome to FAIZ 777! Room Match ID, Password, and match slot assignments are shared exclusively in our official WhatsApp Channel.</p>
+            <a className="btn whatsapp" href={WHATSAPP_CHANNEL} target="_blank" rel="noreferrer" style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}>
+              <MessageCircle size={18} /> JOIN WHATSAPP CHANNEL <ExternalLink size={15} />
             </a>
           </div>
 
@@ -1053,10 +1054,10 @@ function Recruitment() {
             </div>
 
             <div className="whatsapp-box" style={{ width: '100%', textAlign: 'left', margin: '0 0 25px' }}>
-              <h3><MessageCircle size={18} /> OFFICIAL WHATSAPP GROUP</h3>
-              <p style={{ margin: '0 0 12px' }}>Access Room Match ID & Password exclusively in the WhatsApp group:</p>
-              <a className="btn whatsapp" href={whatsappLink} target="_blank" rel="noreferrer" style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
-                <MessageCircle size={16} /> OPEN WHATSAPP GROUP <ExternalLink size={14} />
+              <h3><MessageCircle size={18} /> OFFICIAL WHATSAPP CHANNEL</h3>
+              <p style={{ margin: '0 0 12px' }}>Access Room Match ID & Password exclusively in the WhatsApp Channel:</p>
+              <a className="btn whatsapp" href={WHATSAPP_CHANNEL} target="_blank" rel="noreferrer" style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}>
+                <MessageCircle size={16} /> JOIN WHATSAPP CHANNEL <ExternalLink size={14} />
               </a>
             </div>
 
